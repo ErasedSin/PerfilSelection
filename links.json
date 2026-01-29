@@ -1,1 +1,13 @@
-
+{
+  "profile": {
+    "name": "Seu Nome",
+    "image": "assets/profile.png"
+  },
+  "links": [
+    {
+      "name": "Instagram",
+      "url": "https://instagram.com",
+      "image": "assets/profile.png"
+    }
+  ]
+}
