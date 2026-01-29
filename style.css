@@ -189,3 +189,40 @@ body{
   .bubble.active{ width: 132px; height: 132px; }
   .label{ font-size: 20px; }
 }
+/* Estados de distância das bolhas (controle visual da roda) */
+
+.bubble {
+  transition:
+    transform 0.38s cubic-bezier(.22,.61,.36,1),
+    opacity 0.38s ease,
+    box-shadow 0.38s ease;
+}
+
+/* Bolha central */
+.bubble.active {
+  transform: scale(1);
+  opacity: 1;
+  z-index: 4;
+}
+
+/* Vizinhas imediatas */
+.bubble.near {
+  transform: scale(0.78);
+  opacity: 0.55;
+  z-index: 3;
+}
+
+/* Um pouco mais longe */
+.bubble.far {
+  transform: scale(0.6);
+  opacity: 0.35;
+  z-index: 2;
+}
+
+/* Buffer (bem longe, mas visível) */
+.bubble.buffer {
+  transform: scale(0.45);
+  opacity: 0.22;
+  z-index: 1;
+}
+
