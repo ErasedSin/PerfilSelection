@@ -4,21 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Game Menu Links</title>
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="bg"></div>
+  <div class="bg-overlay"></div>
 
-  <!-- FUNDO -->
-  <div class="background"></div>
+  <main class="wrap">
+    <header class="top">
+      <div class="hint">Arraste ◀ ▶ (ou clique nas bolhas)</div>
+    </header>
 
-  <!-- CONTEÚDO -->
-  <main class="container">
-    <div class="carousel" id="carousel"></div>
+    <section class="stage">
+      <button class="nav left" id="btnPrev" aria-label="Anterior">◀</button>
+
+      <div class="carousel" id="carousel" aria-label="Seleção de perfis"></div>
+
+      <button class="nav right" id="btnNext" aria-label="Próximo">▶</button>
+    </section>
+
     <div class="label" id="label">Carregando...</div>
+    <div class="sub" id="sub">Toque/click no círculo central para abrir</div>
   </main>
 
   <script src="script.js"></script>
 </body>
 </html>
-
