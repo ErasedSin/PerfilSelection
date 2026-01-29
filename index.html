@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Game Menu Links</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="bg-overlay"></div>
+
+  <main class="wrap">
+    <header class="top">
+      <div class="hint">Arraste ◀ ▶</div>
+    </header>
+
+    <section class="stage">
+      <button class="nav left" id="btnPrev">◀</button>
+      <div class="wheel-viewport" id="viewport">
+        <div class="wheel-track" id="track"></div>
+      </div>
+      <button class="nav right" id="btnNext">▶</button>
+    </section>
+
+    <div class="label" id="label">Carregando...</div>
+    <div class="sub">Clique no círculo central</div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,9 +1,24 @@
 {
   "items": [
-    { "name": "Instagram", "url": "https://www.instagram.com/igaiomoreirai/" },
-    { "name": "TikTok", "url": "https://www.tiktok.com/@erased4sin" },
-    { "name": "X (Twitter)", "url": "https://x.com/_EroSennim_" },
-    { "name": "GitHub", "url": "https://github.com/ErasedSin" },
-    { "name": "Portfólio", "url": "https://erasedsin.github.io/Profile/" }
+    {
+      "name": "Instagram",
+      "url": "https://www.instagram.com/igaiomoreirai/"
+    },
+    {
+      "name": "TikTok",
+      "url": "https://www.tiktok.com/@erased4sin"
+    },
+    {
+      "name": "X (Twitter)",
+      "url": "https://x.com/_EroSennim_"
+    },
+    {
+      "name": "GitHub",
+      "url": "https://github.com/ErasedSin"
+    },
+    {
+      "name": "Portf\u00f3lio",
+      "url": "https://erasedsin.github.io/Profile/"
+    }
   ]
 }
