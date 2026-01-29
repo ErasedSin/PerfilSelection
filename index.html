@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Game Menu Links</title>
+  <title>PerfilSelection</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,19 +12,21 @@
 
   <main class="wrap">
     <header class="top">
-      <div class="hint">Arraste ◀ ▶</div>
+      <div class="hint">Arraste ◀ ▶ ou use as setas</div>
     </header>
 
     <section class="stage">
-      <button class="nav left" id="btnPrev">◀</button>
-      <div class="wheel-viewport" id="viewport">
+      <button class="nav left" id="btnPrev" aria-label="Anterior">◀</button>
+
+      <div class="wheel-viewport" id="viewport" aria-label="Seleção de perfis">
         <div class="wheel-track" id="track"></div>
       </div>
-      <button class="nav right" id="btnNext">▶</button>
+
+      <button class="nav right" id="btnNext" aria-label="Próximo">▶</button>
     </section>
 
     <div class="label" id="label">Carregando...</div>
-    <div class="sub">Clique no círculo central</div>
+    <div class="sub" id="sub">Clique no círculo central para abrir</div>
   </main>
 
   <script src="script.js"></script>

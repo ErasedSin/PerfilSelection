@@ -1,10 +1,191 @@
-body{margin:0;overflow:hidden;background:#05070b;color:#fff;font-family:system-ui}
-.bg{position:fixed;inset:0;background:radial-gradient(circle at center,rgba(0,200,255,.15),transparent 60%);filter:blur(30px)}
-.bg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7)}
-.wrap{height:100vh;display:grid;grid-template-rows:auto 1fr auto auto;place-items:center}
-.stage{width:90vw;display:grid;grid-template-columns:40px 1fr 40px;align-items:center}
-.nav{background:#111;color:#fff;border:none;border-radius:8px;font-size:18px}
-.wheel-viewport{overflow:hidden}
-.wheel-track{display:flex;gap:20px;transition:transform .4s ease}
-.bubble{width:90px;height:90px;border-radius:50%;background:#222;opacity:.4;transition:.3s}
-.bubble.active{width:150px;height:150px;opacity:1;box-shadow:0 0 30px cyan}
+/* ====== Base ====== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body{
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  overflow: hidden;
+  background: #05070b;
+  color: #fff;
+}
+
+/* ====== Fundo (coloque assets/bg.jpg se quiser) ====== */
+.bg{
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(1200px 600px at 50% 35%, rgba(0,200,255,.18), transparent 60%),
+    radial-gradient(900px 500px at 30% 70%, rgba(255,0,140,.10), transparent 60%),
+    radial-gradient(900px 500px at 70% 75%, rgba(120,255,0,.08), transparent 60%),
+    url("assets/bg.jpg") center/cover no-repeat;
+  filter: blur(22px) brightness(.55) saturate(1.08);
+  transform: scale(1.12);
+  z-index: -2;
+}
+.bg-overlay{
+  position: fixed; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,.58), rgba(0,0,0,.86));
+  z-index: -1;
+}
+
+/* ====== Layout ====== */
+.wrap{
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  align-items: center;
+  justify-items: center;
+  padding: 18px;
+  gap: 10px;
+}
+.top .hint{
+  opacity: .75;
+  font-size: 14px;
+  letter-spacing: .2px;
+}
+
+/* ====== Stage ====== */
+.stage{
+  width: min(980px, 96vw);
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+.nav{
+  height: 44px;
+  width: 44px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10,12,18,.45);
+  color: rgba(255,255,255,.92);
+  border-radius: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: transform .12s ease, opacity .2s ease;
+}
+.nav:active{ transform: scale(.96); }
+.nav:disabled{ opacity: .35; cursor: default; }
+
+/* ====== Carrossel (Budokai step) ====== */
+.wheel-viewport{
+  width: 100%;
+  overflow: hidden;
+  user-select: none;
+  touch-action: pan-y;
+  padding: 22px 0; /* espaço pro glow */
+  cursor: grab;
+}
+.wheel-viewport:active{ cursor: grabbing; }
+
+.wheel-track{
+  --gap: 18px;
+  --step: 104px; /* será ajustado via JS */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap);
+  will-change: transform;
+  transform: translate3d(0,0,0);
+}
+
+/* 7 bolhas (2 buffer em cada lado + 1 central + 2) */
+.bubble{
+  width: 86px;
+  height: 86px;
+  border-radius: 999px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+
+  border: 2px solid rgba(255,255,255,.10);
+  background: rgba(20,24,36,.50);
+  backdrop-filter: blur(6px);
+
+  opacity: .40;
+  transform: scale(.74);
+  filter: blur(1px) saturate(1.02);
+
+  transition:
+    transform 260ms cubic-bezier(.2,.9,.25,1),
+    opacity 220ms ease,
+    filter 220ms ease,
+    border-color 220ms ease,
+    box-shadow 260ms cubic-bezier(.2,.9,.25,1);
+
+  cursor: pointer;
+}
+.bubble img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.bubble .fallback{
+  font-weight: 850;
+  font-size: 20px;
+  color: rgba(255,255,255,.92);
+}
+
+/* estados por distância */
+.bubble.near{
+  opacity: .72;
+  transform: scale(.90);
+  filter: blur(0px);
+  border-color: rgba(255,255,255,.18);
+}
+.bubble.far{
+  opacity: .32;
+  transform: scale(.70);
+  filter: blur(1px);
+}
+.bubble.buffer{
+  opacity: .14;
+  transform: scale(.62);
+  filter: blur(2px);
+  border-color: rgba(255,255,255,.06);
+}
+
+.bubble.active{
+  width: 148px;
+  height: 148px;
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0px) saturate(1.05);
+  border-color: rgba(0,200,255,.55);
+  box-shadow:
+    0 0 0 6px rgba(0,200,255,.06),
+    0 0 26px rgba(0,200,255,.55),
+    0 0 60px rgba(0,200,255,.18);
+}
+
+/* animação do track (step) */
+.wheel-track.anim-next{
+  transition: transform 380ms cubic-bezier(.2,.9,.25,1);
+  transform: translate3d(calc(var(--step) * -1), 0, 0);
+}
+.wheel-track.anim-prev{
+  transition: transform 380ms cubic-bezier(.2,.9,.25,1);
+  transform: translate3d(var(--step), 0, 0);
+}
+
+/* ====== Texto ====== */
+.label{
+  margin-top: 2px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  text-shadow: 0 8px 24px rgba(0,0,0,.55);
+}
+.sub{
+  opacity: .7;
+  font-size: 13px;
+}
+
+/* Mobile */
+@media (max-width: 520px){
+  .stage{ grid-template-columns: 38px 1fr 38px; }
+  .nav{ height: 38px; width: 38px; border-radius: 10px; }
+  .wheel-track{ --gap: 14px; }
+  .bubble{ width: 72px; height: 72px; }
+  .bubble.active{ width: 132px; height: 132px; }
+  .label{ font-size: 20px; }
+}
