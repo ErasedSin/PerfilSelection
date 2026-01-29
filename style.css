@@ -1,1 +1,76 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* FUNDO */
+.background {
+  position: fixed;
+  inset: 0;
+  background: url("assets/bg.jpg") center/cover no-repeat;
+  filter: blur(20px) brightness(0.5);
+  transform: scale(1.1);
+  z-index: -1;
+}
+
+/* CONTAINER */
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* CARROSSEL */
+.carousel {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  transition: transform 0.4s ease;
+}
+
+/* CÍRCULOS */
+.circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #222;
+  overflow: hidden;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transform: scale(0.8);
+  transition: all 0.4s ease;
+}
+
+.circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* SELECIONADO */
+.circle.active {
+  width: 140px;
+  height: 140px;
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 0 25px rgba(0, 200, 255, 0.8);
+}
+
+/* TEXTO */
+.label {
+  margin-top: 20px;
+  color: white;
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
 
