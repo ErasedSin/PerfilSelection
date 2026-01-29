@@ -12,21 +12,26 @@
 
   <main class="wrap">
     <header class="top">
-      <div class="hint">Arraste ◀ ▶ (ou clique nas bolhas)</div>
+      <div class="hint">Arraste ◀ ▶ (ou use as setas)</div>
     </header>
 
     <section class="stage">
       <button class="nav left" id="btnPrev" aria-label="Anterior">◀</button>
 
-      <div class="carousel" id="carousel" aria-label="Seleção de perfis"></div>
+      <!-- viewport -->
+      <div class="wheel-viewport" id="viewport">
+        <!-- track -->
+        <div class="wheel-track" id="track"></div>
+      </div>
 
       <button class="nav right" id="btnNext" aria-label="Próximo">▶</button>
     </section>
 
     <div class="label" id="label">Carregando...</div>
-    <div class="sub" id="sub">Toque/click no círculo central para abrir</div>
+    <div class="sub" id="sub">Clique/toque no círculo central para abrir</div>
   </main>
 
   <script src="script.js"></script>
 </body>
 </html>
+
