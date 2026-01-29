@@ -1,13 +1,7 @@
 {
-  "profile": {
-    "name": "Seu Nome",
-    "image": "assets/profile.png"
-  },
-  "links": [
-    {
-      "name": "Instagram",
-      "url": "https://instagram.com",
-      "image": "assets/profile.png"
-    }
+  "items": [
+    { "name": "Instagram", "url": "https://instagram.com", "image": "assets/profile.png" },
+    { "name": "GitHub", "url": "https://github.com", "image": "assets/profile.png" }
   ]
 }
+
