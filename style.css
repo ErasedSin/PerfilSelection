@@ -1,30 +1,27 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
-body {
+body{
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   overflow: hidden;
   background: #05070b;
   color: #fff;
 }
 
-/* Fundo: usa assets/bg.jpg se existir, mas funciona mesmo sem */
+/* Fundo */
 .bg{
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background:
     radial-gradient(1200px 600px at 50% 35%, rgba(0,200,255,.18), transparent 60%),
     radial-gradient(900px 500px at 30% 70%, rgba(255,0,140,.10), transparent 60%),
     radial-gradient(900px 500px at 70% 75%, rgba(120,255,0,.08), transparent 60%),
     url("assets/bg.jpg") center/cover no-repeat;
-  filter: blur(20px) brightness(.55) saturate(1.1);
-  transform: scale(1.1);
+  filter: blur(22px) brightness(.55) saturate(1.1);
+  transform: scale(1.12);
   z-index: -2;
 }
 .bg-overlay{
-  position: fixed;
-  inset: 0;
-  background:
-    linear-gradient(to bottom, rgba(0,0,0,.65), rgba(0,0,0,.82));
+  position: fixed; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,.62), rgba(0,0,0,.86));
   z-index: -1;
 }
 
@@ -38,14 +35,13 @@ body {
   padding: 18px;
   gap: 10px;
 }
-
 .top .hint{
   opacity: .75;
   font-size: 14px;
   letter-spacing: .2px;
 }
 
-/* Área do carrossel */
+/* Stage */
 .stage{
   width: min(980px, 96vw);
   display: grid;
@@ -53,7 +49,6 @@ body {
   align-items: center;
   gap: 10px;
 }
-
 .nav{
   height: 44px;
   width: 44px;
@@ -66,16 +61,22 @@ body {
   transition: transform .15s ease, opacity .2s ease;
 }
 .nav:active{ transform: scale(.96); }
-.nav:disabled{ opacity: .35; cursor: default; }
 
-/* Carrossel */
-.carousel{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
+/* Wheel */
+.wheel-viewport{
+  width: 100%;
+  overflow: hidden;
   user-select: none;
-  touch-action: pan-y; /* deixa swipe horizontal funcionar sem travar scroll vertical */
+  touch-action: pan-y;
+  padding: 22px 0; /* dá espaço pro glow */
+}
+.wheel-track{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  will-change: transform;
+  transition: transform 420ms cubic-bezier(.2,.9,.25,1);
 }
 
 /* Bolhas */
@@ -83,36 +84,51 @@ body {
   width: 86px;
   height: 86px;
   border-radius: 999px;
-  border: 2px solid rgba(255,255,255,.10);
-  background: rgba(20,24,36,.50);
   overflow: hidden;
   flex: 0 0 auto;
-  opacity: .55;
-  transform: scale(.86);
-  filter: saturate(.9);
   display: grid;
   place-items: center;
-  cursor: pointer;
-  transition: transform .25s ease, opacity .25s ease, box-shadow .25s ease, border-color .25s ease;
-  backdrop-filter: blur(6px);
-}
 
+  border: 2px solid rgba(255,255,255,.10);
+  background: rgba(20,24,36,.50);
+  backdrop-filter: blur(6px);
+
+  cursor: pointer;
+
+  opacity: .50;
+  transform: scale(.78);
+  filter: saturate(.9) blur(0px);
+
+  transition:
+    transform 380ms cubic-bezier(.2,.9,.25,1),
+    opacity 300ms ease,
+    box-shadow 380ms cubic-bezier(.2,.9,.25,1),
+    border-color 320ms ease,
+    filter 320ms ease;
+}
 .bubble img{
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-
-/* fallback quando não tem imagem */
 .bubble .fallback{
-  font-weight: 700;
+  font-weight: 800;
   font-size: 22px;
-  letter-spacing: .5px;
-  color: rgba(255,255,255,.85);
+  color: rgba(255,255,255,.9);
 }
 
-/* Selecionado (meio) */
+/* estados pela distância do centro */
+.bubble.near{
+  opacity: .78;
+  transform: scale(.92);
+  border-color: rgba(255,255,255,.18);
+}
+.bubble.far{
+  opacity: .38;
+  transform: scale(.70);
+  filter: blur(1px);
+}
 .bubble.active{
   width: 148px;
   height: 148px;
@@ -126,35 +142,23 @@ body {
   filter: saturate(1.05);
 }
 
-/* Anéis dos laterais (para reforçar "modo jogo") */
-.bubble.near{
-  opacity: .80;
-  transform: scale(.94);
-  border-color: rgba(255,255,255,.16);
-}
-.bubble.far{
-  opacity: .40;
-  transform: scale(.78);
-}
-
 .label{
   margin-top: 2px;
   font-size: 22px;
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: .2px;
   text-shadow: 0 8px 24px rgba(0,0,0,.55);
 }
-
 .sub{
   opacity: .7;
   font-size: 13px;
 }
 
-/* Mobile ajustes */
+/* Mobile */
 @media (max-width: 520px){
   .stage{ grid-template-columns: 38px 1fr 38px; }
   .nav{ height: 38px; width: 38px; border-radius: 10px; }
-  .carousel{ gap: 14px; }
+  .wheel-track{ gap: 14px; }
   .bubble{ width: 72px; height: 72px; }
   .bubble.active{ width: 132px; height: 132px; }
   .label{ font-size: 20px; }
