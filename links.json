@@ -1,7 +1,29 @@
 {
   "items": [
-    { "name": "Instagram", "url": "https://instagram.com", "image": "assets/profile.png" },
-    { "name": "GitHub", "url": "https://github.com", "image": "assets/profile.png" }
+    {
+      "name": "Instagram",
+      "url": "https://www.instagram.com/igaiomoreirai/",
+      "image": "assets/instagram.png"
+    },
+    {
+      "name": "TikTok",
+      "url": "https://www.tiktok.com/@erased4sin",
+      "image": "assets/tiktok.png"
+    },
+    {
+      "name": "X (Twitter)",
+      "url": "https://x.com/_EroSennim_",
+      "image": "assets/x.png"
+    },
+    {
+      "name": "GitHub",
+      "url": "https://github.com/ErasedSin",
+      "image": "assets/github.png"
+    },
+    {
+      "name": "Portfólio",
+      "url": "https://erasedsin.github.io/Profile/",
+      "image": "assets/portfolio.png"
+    }
   ]
 }
-
