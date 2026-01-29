@@ -4,11 +4,24 @@ const label = document.getElementById("label");
 let items = [];
 let index = 0;
 
-fetch("links.json")
-  .then(res => res.json())
-  .then(data => {
-    items = data.items;
+fetch("links.json", { cache: "no-store" })
+  .then((res) => {
+    if (!res.ok) throw new Error(`links.json não encontrado (HTTP ${res.status})`);
+    return res.json();
+  })
+  .then((data) => {
+    // aceita dois formatos: { items: [...] } ou { links: [...] }
+    items = data.items || data.links || [];
+
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error('links.json precisa ter "items" ou "links" com uma lista de links');
+    }
+
     render();
+  })
+  .catch((err) => {
+    console.error(err);
+    label.textContent = "Erro: " + err.message;
   });
 
 function render() {
@@ -17,7 +30,9 @@ function render() {
   items.forEach((item, i) => {
     const div = document.createElement("div");
     div.className = "circle" + (i === index ? " active" : "");
-    div.innerHTML = `<img src="${item.image}" alt="${item.name}">`;
+
+    const imgSrc = item.image || "assets/profile.png";
+    div.innerHTML = `<img src="${imgSrc}" alt="${item.name || "Link"}">`;
 
     div.onclick = () => {
       if (i === index) {
@@ -31,6 +46,5 @@ function render() {
     carousel.appendChild(div);
   });
 
-  label.textContent = items[index].name;
+  label.textContent = items[index].name || "Sem nome";
 }
-
