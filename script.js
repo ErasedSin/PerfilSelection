@@ -6,83 +6,91 @@ const btnNext = document.getElementById("btnNext");
 const viewport = document.getElementById("viewport");
 
 let baseItems = [];
-let index = 0;           // index no array base
-let animLock = false;    // trava durante transição
+let index = 0;
+let animLock = false;
 
-// 7 slots: [-3,-2,-1,0,+1,+2,+3] (0 é o centro)
-const OFFSETS = [-3,-2,-1,0,1,2,3];
+// 7 slots: [-3,-2,-1,0,+1,+2,+3]
+const OFFSETS = [-3, -2, -1, 0, 1, 2, 3];
 let bubbleEls = [];
 
+// cache de imagem (URL -> "ok"/"fail")
+const imgCache = new Map();
+
 fetch("links.json", { cache: "no-store" })
-  .then(res => {
+  .then((res) => {
     if (!res.ok) throw new Error(`links.json não encontrado (HTTP ${res.status})`);
     return res.json();
   })
-  .then(data => {
+  .then((data) => {
     baseItems = data.items || data.links || [];
     if (!Array.isArray(baseItems) || baseItems.length === 0) {
       throw new Error('links.json precisa ter "items" (lista de links).');
     }
     index = 0;
+
     initBubbles();
     measureStep();
+    preloadAround(); // pré-carrega o que vai aparecer
     paintAll();
+
     setupControls();
   })
-  .catch(err => {
+  .catch((err) => {
     console.error(err);
     label.textContent = "Erro: " + err.message;
     sub.textContent = "Verifique links.json e faça Ctrl+Shift+R.";
   });
 
-function mod(n, m){ return ((n % m) + m) % m; }
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
 
-function getInitials(name){
+function getInitials(name) {
   if (!name) return "?";
-  const parts = name.replace(/[()]/g,"").trim().split(/\s+/);
+  const parts = name.replace(/[()]/g, "").trim().split(/\s+/);
   const a = parts[0]?.[0] || "?";
   const b = parts[1]?.[0] || "";
   return (a + b).toUpperCase();
 }
 
-// Ícones nítidos (sem precisar salvar assets)
-function iconCandidates(url){
-  try{
+function iconCandidates(url) {
+  try {
     const u = new URL(url);
     const domain = u.hostname.replace(/^www\./, "");
     return [
       `https://logo.clearbit.com/${domain}`,
       `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-      `https://www.google.com/s2/favicons?domain=${domain}&sz=512`
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=512`,
     ];
-  }catch{
+  } catch {
     return [];
   }
 }
 
-function initBubbles(){
+function initBubbles() {
   track.innerHTML = "";
   bubbleEls = OFFSETS.map(() => {
     const el = document.createElement("div");
     el.className = "bubble";
-    el.innerHTML = `<img alt=""><div class="fallback" style="display:none"></div>`;
+    el.innerHTML = `
+      <img alt="" draggable="false">
+      <div class="fallback" style="display:none"></div>
+    `;
     track.appendChild(el);
     return el;
   });
 
-  // click handlers: clicar no centro abre; perto navega
+  // Click: centro abre, laterais navegam (até 2 passos)
   bubbleEls.forEach((el, slotIdx) => {
     el.addEventListener("click", () => {
       if (animLock) return;
-
       const off = OFFSETS[slotIdx];
+
       if (off === 0) {
-        const item = baseItems[index];
-        window.open(item.url, "_blank");
+        window.open(baseItems[index].url, "_blank");
         return;
       }
 
-      // permite clicar nos adjacentes (±1) e próximos (±2) com feel de jogo
       const steps = Math.max(-2, Math.min(2, off));
       if (steps > 0) next(steps);
       else prev(-steps);
@@ -90,7 +98,15 @@ function initBubbles(){
   });
 }
 
-function setBubbleContent(el, item){
+function setBubbleState(el, off) {
+  el.classList.remove("buffer", "far", "near", "active");
+  if (off === 0) el.classList.add("active");
+  else if (Math.abs(off) === 1) el.classList.add("near");
+  else if (Math.abs(off) === 2) el.classList.add("far");
+  else el.classList.add("buffer");
+}
+
+function setBubbleContent(el, item) {
   const img = el.querySelector("img");
   const fb = el.querySelector(".fallback");
 
@@ -103,35 +119,55 @@ function setBubbleContent(el, item){
     fb.textContent = getInitials(item.name);
   };
 
-  const tryNext = () => {
-    if (k >= candidates.length) { useFallback(); return; }
+  const useImg = (src) => {
     img.style.display = "block";
     fb.style.display = "none";
-    img.src = candidates[k++];
+    img.alt = item.name || "Link";
+    img.src = src;
   };
 
-  img.onerror = tryNext;
-  img.onload = () => { /* ok */ };
+  const tryNext = () => {
+    if (k >= candidates.length) {
+      useFallback();
+      return;
+    }
+    const src = candidates[k++];
 
-  img.alt = item.name || "Link";
+    // cache: se já falhou, pula
+    const c = imgCache.get(src);
+    if (c === "fail") {
+      tryNext();
+      return;
+    }
+
+    // se já ok, usa direto
+    if (c === "ok") {
+      useImg(src);
+      return;
+    }
+
+    // testa sem travar: cria Image() fora do DOM
+    const tester = new Image();
+    tester.onload = () => {
+      imgCache.set(src, "ok");
+      useImg(src);
+    };
+    tester.onerror = () => {
+      imgCache.set(src, "fail");
+      tryNext();
+    };
+    tester.src = src;
+  };
+
   tryNext();
 }
 
-function setBubbleState(el, off){
-  // estados: buffer (±3), far (±2), near (±1), active (0)
-  el.classList.remove("buffer","far","near","active");
-  if (off === 0) el.classList.add("active");
-  else if (Math.abs(off) === 1) el.classList.add("near");
-  else if (Math.abs(off) === 2) el.classList.add("far");
-  else el.classList.add("buffer");
-}
-
-function paintAll(){
-  // atualiza os 7 slots ao redor do index central
+function paintAll() {
   OFFSETS.forEach((off, slotIdx) => {
     const i = mod(index + off, baseItems.length);
     const item = baseItems[i];
     const el = bubbleEls[slotIdx];
+
     setBubbleState(el, off);
     setBubbleContent(el, item);
   });
@@ -140,13 +176,28 @@ function paintAll(){
   sub.textContent = "Clique no círculo central para abrir";
 }
 
-function measureStep(){
-  // calcula step baseado no tamanho do elemento + gap do CSS
+function preloadAround() {
+  // pré-carrega as imagens dos 7 itens em volta pra não engasgar na troca
+  OFFSETS.forEach((off) => {
+    const i = mod(index + off, baseItems.length);
+    const item = baseItems[i];
+    const candidates = item.image ? [item.image] : iconCandidates(item.url);
+
+    candidates.slice(0, 2).forEach((src) => {
+      if (imgCache.has(src)) return;
+      const im = new Image();
+      im.onload = () => imgCache.set(src, "ok");
+      im.onerror = () => imgCache.set(src, "fail");
+      im.src = src;
+    });
+  });
+}
+
+function measureStep() {
   const style = getComputedStyle(track);
   const gap = parseFloat(style.gap || style.columnGap || "18") || 18;
 
-  // escolhe um bubble "normal" (não active) pra medir
-  const normal = bubbleEls.find(b => !b.classList.contains("active")) || bubbleEls[0];
+  const normal = bubbleEls.find((b) => !b.classList.contains("active")) || bubbleEls[0];
   const rect = normal.getBoundingClientRect();
   const size = rect.width || 86;
 
@@ -154,7 +205,7 @@ function measureStep(){
   track.style.setProperty("--step", `${step}px`);
 }
 
-function transitionOnce(cls){
+function transitionOnce(cls) {
   return new Promise((resolve) => {
     const onEnd = (e) => {
       if (e.target !== track) return;
@@ -162,55 +213,63 @@ function transitionOnce(cls){
       resolve();
     };
     track.addEventListener("transitionend", onEnd);
+
+    // força garantir que a transição vai acontecer
+    track.classList.remove("anim-next", "anim-prev");
+    void track.offsetHeight; // reflow
     track.classList.add(cls);
   });
 }
 
-async function next(steps = 1){
+async function next(steps = 1) {
   if (animLock) return;
   animLock = true;
 
   for (let s = 0; s < steps; s++) {
     await transitionOnce("anim-next");
-    // após a animação, atualiza índice (passou pro lado)
+
     index = mod(index + 1, baseItems.length);
-    // reseta transform
+
+    // reset sem piscar
     track.classList.remove("anim-next");
     track.style.transition = "none";
     track.style.transform = "translate3d(0,0,0)";
-    // força reflow
     void track.offsetHeight;
     track.style.transition = "";
-    // repinta para dar a ilusão de roda infinita
+
+    preloadAround();
     paintAll();
   }
 
   animLock = false;
 }
 
-async function prev(steps = 1){
+async function prev(steps = 1) {
   if (animLock) return;
   animLock = true;
 
   for (let s = 0; s < steps; s++) {
     await transitionOnce("anim-prev");
+
     index = mod(index - 1, baseItems.length);
+
     track.classList.remove("anim-prev");
     track.style.transition = "none";
     track.style.transform = "translate3d(0,0,0)";
     void track.offsetHeight;
     track.style.transition = "";
+
+    preloadAround();
     paintAll();
   }
 
   animLock = false;
 }
 
-function setupControls(){
+function setupControls() {
   btnPrev.addEventListener("click", () => prev(1));
   btnNext.addEventListener("click", () => next(1));
 
-  // teclado
   window.addEventListener("keydown", (e) => {
     if (animLock) return;
     if (e.key === "ArrowLeft") prev(1);
@@ -218,57 +277,61 @@ function setupControls(){
     if (e.key === "Enter") window.open(baseItems[index].url, "_blank");
   });
 
-  // swipe (B: step, não drag livre)
+  // Swipe: step
   let startX = 0;
   let startY = 0;
-  let moved = false;
 
-  viewport.addEventListener("touchstart", (e) => {
-    const t = e.touches[0];
-    startX = t.clientX;
-    startY = t.clientY;
-    moved = false;
-  }, { passive: true });
+  viewport.addEventListener(
+    "touchstart",
+    (e) => {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    },
+    { passive: true }
+  );
 
-  viewport.addEventListener("touchmove", (e) => {
-    const t = e.touches[0];
-    const dx = t.clientX - startX;
-    const dy = t.clientY - startY;
-    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) moved = true;
-  }, { passive: true });
+  viewport.addEventListener(
+    "touchend",
+    (e) => {
+      if (animLock) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
 
-  viewport.addEventListener("touchend", (e) => {
-    if (animLock) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - startX;
-    const dy = t.clientY - startY;
+      if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
 
-    // só considera swipe horizontal
-    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
+      if (dx < 0) next(1);
+      else prev(1);
+    },
+    { passive: true }
+  );
 
-    if (dx < 0) next(1);
-    else prev(1);
-  });
-
-  // mouse swipe (arrasto curto, mas step)
+  // Mouse swipe: step
   let mDown = false;
   let mStartX = 0;
-  viewport.addEventListener("mousedown", (e) => { mDown = true; mStartX = e.clientX; });
+
+  viewport.addEventListener("mousedown", (e) => {
+    mDown = true;
+    mStartX = e.clientX;
+  });
+
   window.addEventListener("mouseup", (e) => {
-    if (!mDown || animLock) { mDown = false; return; }
+    if (!mDown || animLock) {
+      mDown = false;
+      return;
+    }
     mDown = false;
+
     const dx = e.clientX - mStartX;
     if (Math.abs(dx) < 60) return;
     if (dx < 0) next(1);
     else prev(1);
   });
 
-  // recalcula step no resize
   let r;
   window.addEventListener("resize", () => {
     clearTimeout(r);
-    r = setTimeout(() => {
-      measureStep();
-    }, 120);
+    r = setTimeout(() => measureStep(), 120);
   });
 }
