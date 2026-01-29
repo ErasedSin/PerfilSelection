@@ -1,76 +1,161 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: system-ui, sans-serif;
-}
-
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
 body {
-  height: 100vh;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   overflow: hidden;
-  background: #000;
+  background: #05070b;
+  color: #fff;
 }
 
-/* FUNDO */
-.background {
+/* Fundo: usa assets/bg.jpg se existir, mas funciona mesmo sem */
+.bg{
   position: fixed;
   inset: 0;
-  background: url("assets/bg.jpg") center/cover no-repeat;
-  filter: blur(20px) brightness(0.5);
+  background:
+    radial-gradient(1200px 600px at 50% 35%, rgba(0,200,255,.18), transparent 60%),
+    radial-gradient(900px 500px at 30% 70%, rgba(255,0,140,.10), transparent 60%),
+    radial-gradient(900px 500px at 70% 75%, rgba(120,255,0,.08), transparent 60%),
+    url("assets/bg.jpg") center/cover no-repeat;
+  filter: blur(20px) brightness(.55) saturate(1.1);
   transform: scale(1.1);
+  z-index: -2;
+}
+.bg-overlay{
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.65), rgba(0,0,0,.82));
   z-index: -1;
 }
 
-/* CONTAINER */
-.container {
-  height: 100vh;
+/* Layout */
+.wrap{
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  align-items: center;
+  justify-items: center;
+  padding: 18px;
+  gap: 10px;
+}
+
+.top .hint{
+  opacity: .75;
+  font-size: 14px;
+  letter-spacing: .2px;
+}
+
+/* Área do carrossel */
+.stage{
+  width: min(980px, 96vw);
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav{
+  height: 44px;
+  width: 44px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10,12,18,.45);
+  color: rgba(255,255,255,.9);
+  border-radius: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: transform .15s ease, opacity .2s ease;
+}
+.nav:active{ transform: scale(.96); }
+.nav:disabled{ opacity: .35; cursor: default; }
+
+/* Carrossel */
+.carousel{
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  align-items: center;
+  gap: 18px;
+  user-select: none;
+  touch-action: pan-y; /* deixa swipe horizontal funcionar sem travar scroll vertical */
 }
 
-/* CARROSSEL */
-.carousel {
-  display: flex;
-  gap: 30px;
-  align-items: center;
-  transition: transform 0.4s ease;
-}
-
-/* CÍRCULOS */
-.circle {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: #222;
+/* Bolhas */
+.bubble{
+  width: 86px;
+  height: 86px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.10);
+  background: rgba(20,24,36,.50);
   overflow: hidden;
-  flex-shrink: 0;
-  opacity: 0.6;
-  transform: scale(0.8);
-  transition: all 0.4s ease;
+  flex: 0 0 auto;
+  opacity: .55;
+  transform: scale(.86);
+  filter: saturate(.9);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform .25s ease, opacity .25s ease, box-shadow .25s ease, border-color .25s ease;
+  backdrop-filter: blur(6px);
 }
 
-.circle img {
+.bubble img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
-/* SELECIONADO */
-.circle.active {
-  width: 140px;
-  height: 140px;
+/* fallback quando não tem imagem */
+.bubble .fallback{
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: .5px;
+  color: rgba(255,255,255,.85);
+}
+
+/* Selecionado (meio) */
+.bubble.active{
+  width: 148px;
+  height: 148px;
   opacity: 1;
   transform: scale(1);
-  box-shadow: 0 0 25px rgba(0, 200, 255, 0.8);
+  border-color: rgba(0,200,255,.55);
+  box-shadow:
+    0 0 0 6px rgba(0,200,255,.06),
+    0 0 26px rgba(0,200,255,.55),
+    0 0 60px rgba(0,200,255,.18);
+  filter: saturate(1.05);
 }
 
-/* TEXTO */
-.label {
-  margin-top: 20px;
-  color: white;
-  font-size: 1.2rem;
-  opacity: 0.8;
+/* Anéis dos laterais (para reforçar "modo jogo") */
+.bubble.near{
+  opacity: .80;
+  transform: scale(.94);
+  border-color: rgba(255,255,255,.16);
+}
+.bubble.far{
+  opacity: .40;
+  transform: scale(.78);
 }
 
+.label{
+  margin-top: 2px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: .2px;
+  text-shadow: 0 8px 24px rgba(0,0,0,.55);
+}
+
+.sub{
+  opacity: .7;
+  font-size: 13px;
+}
+
+/* Mobile ajustes */
+@media (max-width: 520px){
+  .stage{ grid-template-columns: 38px 1fr 38px; }
+  .nav{ height: 38px; width: 38px; border-radius: 10px; }
+  .carousel{ gap: 14px; }
+  .bubble{ width: 72px; height: 72px; }
+  .bubble.active{ width: 132px; height: 132px; }
+  .label{ font-size: 20px; }
+}
