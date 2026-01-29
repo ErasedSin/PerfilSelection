@@ -2,28 +2,27 @@
   "items": [
     {
       "name": "Instagram",
-      "url": "https://www.instagram.com/igaiomoreirai/"
-      "image": "assets/insta.JPG"
+      "url": "https://www.instagram.com/igaiomoreirai/",
+      "image": "assets/insta.jpg"
     },
     {
       "name": "TikTok",
-      "url": "https://www.tiktok.com/@erased4sin"
-      "image": "assets/profileX.png"
-
+      "url": "https://www.tiktok.com/@erased4sin",
+      "image": "assets/profile.png"
     },
     {
       "name": "X (Twitter)",
-      "url": "https://x.com/_EroSennim_"
-      "image": "assets/profileX.png"
+      "url": "https://x.com/_EroSennim_",
+      "image": "assets/profile.png"
     },
     {
       "name": "GitHub",
-      "url": "https://github.com/ErasedSin"
+      "url": "https://github.com/ErasedSin",
       "image": "assets/diego.png"
     },
     {
       "name": "Portfólio",
-      "url": "https://erasedsin.github.io/Profile/"
+      "url": "https://erasedsin.github.io/Profile/",
       "image": "assets/portfolio.png"
     }
   ]
