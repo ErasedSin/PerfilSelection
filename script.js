@@ -4,6 +4,7 @@ const sub = document.getElementById("sub");
 const btnPrev = document.getElementById("btnPrev");
 const btnNext = document.getElementById("btnNext");
 const viewport = document.getElementById("viewport");
+const hint = document.getElementById("hint");
 
 let baseItems = [];
 let index = 0;
@@ -13,8 +14,11 @@ let animLock = false;
 const OFFSETS = [-3, -2, -1, 0, 1, 2, 3];
 let bubbleEls = [];
 
-// cache de imagem (URL -> "ok"/"fail")
-const imgCache = new Map();
+// cache de imagem
+const imgCache = new Map(); // src -> "ok"/"fail"
+
+// some com hint depois de um tempo (bem jogo)
+setTimeout(() => { if (hint) hint.style.opacity = "0"; }, 2200);
 
 fetch("links.json", { cache: "no-store" })
   .then((res) => {
@@ -26,13 +30,12 @@ fetch("links.json", { cache: "no-store" })
     if (!Array.isArray(baseItems) || baseItems.length === 0) {
       throw new Error('links.json precisa ter "items" (lista de links).');
     }
-    index = 0;
 
+    index = 0;
     initBubbles();
     measureStep();
-    preloadAround(); // pré-carrega o que vai aparecer
+    preloadAround();
     paintAll();
-
     setupControls();
   })
   .catch((err) => {
@@ -74,23 +77,23 @@ function initBubbles() {
     el.className = "bubble";
     el.innerHTML = `
       <img alt="" draggable="false">
-      <div class="fallback" style="display:none"></div>
+      <div class="fallback"></div>
     `;
     track.appendChild(el);
     return el;
   });
 
-  // Click: centro abre, laterais navegam (até 2 passos)
   bubbleEls.forEach((el, slotIdx) => {
     el.addEventListener("click", () => {
       if (animLock) return;
-      const off = OFFSETS[slotIdx];
 
+      const off = OFFSETS[slotIdx];
       if (off === 0) {
         window.open(baseItems[index].url, "_blank");
         return;
       }
 
+      // clicar perto navega com até 2 passos
       const steps = Math.max(-2, Math.min(2, off));
       if (steps > 0) next(steps);
       else prev(-steps);
@@ -99,11 +102,17 @@ function initBubbles() {
 }
 
 function setBubbleState(el, off) {
-  el.classList.remove("buffer", "far", "near", "active");
+  el.classList.remove("buffer", "far", "near", "active", "left");
   if (off === 0) el.classList.add("active");
   else if (Math.abs(off) === 1) el.classList.add("near");
   else if (Math.abs(off) === 2) el.classList.add("far");
   else el.classList.add("buffer");
+
+  // lado esquerdo espelha a rotação
+  if (off < 0) el.classList.add("left");
+
+  // delays de flutuação diferentes (mais "vida")
+  el.style.setProperty("--delay", `${Math.abs(off) * 0.12}s`);
 }
 
 function setBubbleContent(el, item) {
@@ -131,22 +140,14 @@ function setBubbleContent(el, item) {
       useFallback();
       return;
     }
+
     const src = candidates[k++];
 
-    // cache: se já falhou, pula
     const c = imgCache.get(src);
-    if (c === "fail") {
-      tryNext();
-      return;
-    }
+    if (c === "fail") { tryNext(); return; }
+    if (c === "ok") { useImg(src); return; }
 
-    // se já ok, usa direto
-    if (c === "ok") {
-      useImg(src);
-      return;
-    }
-
-    // testa sem travar: cria Image() fora do DOM
+    // testa fora do DOM (não trava)
     const tester = new Image();
     tester.onload = () => {
       imgCache.set(src, "ok");
@@ -177,12 +178,12 @@ function paintAll() {
 }
 
 function preloadAround() {
-  // pré-carrega as imagens dos 7 itens em volta pra não engasgar na troca
   OFFSETS.forEach((off) => {
     const i = mod(index + off, baseItems.length);
     const item = baseItems[i];
     const candidates = item.image ? [item.image] : iconCandidates(item.url);
 
+    // pré-carrega as 2 primeiras tentativas
     candidates.slice(0, 2).forEach((src) => {
       if (imgCache.has(src)) return;
       const im = new Image();
@@ -207,14 +208,26 @@ function measureStep() {
 
 function transitionOnce(cls) {
   return new Promise((resolve) => {
-    const onEnd = (e) => {
-      if (e.target !== track) return;
+    let done = false;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
       track.removeEventListener("transitionend", onEnd);
       resolve();
     };
+
+    const onEnd = (e) => {
+      if (e.target !== track) return;
+      finish();
+    };
+
     track.addEventListener("transitionend", onEnd);
 
-    // força garantir que a transição vai acontecer
+    // fallback: nunca trava se o browser não disparar transitionend
+    setTimeout(finish, 450);
+
+    // garantir transição
     track.classList.remove("anim-next", "anim-prev");
     void track.offsetHeight; // reflow
     track.classList.add(cls);
@@ -230,7 +243,6 @@ async function next(steps = 1) {
 
     index = mod(index + 1, baseItems.length);
 
-    // reset sem piscar
     track.classList.remove("anim-next");
     track.style.transition = "none";
     track.style.transform = "translate3d(0,0,0)";
@@ -277,37 +289,28 @@ function setupControls() {
     if (e.key === "Enter") window.open(baseItems[index].url, "_blank");
   });
 
-  // Swipe: step
+  // swipe step (celular)
   let startX = 0;
   let startY = 0;
 
-  viewport.addEventListener(
-    "touchstart",
-    (e) => {
-      const t = e.touches[0];
-      startX = t.clientX;
-      startY = t.clientY;
-    },
-    { passive: true }
-  );
+  viewport.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+  }, { passive: true });
 
-  viewport.addEventListener(
-    "touchend",
-    (e) => {
-      if (animLock) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - startX;
-      const dy = t.clientY - startY;
+  viewport.addEventListener("touchend", (e) => {
+    if (animLock) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
 
-      if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0) next(1);
+    else prev(1);
+  }, { passive: true });
 
-      if (dx < 0) next(1);
-      else prev(1);
-    },
-    { passive: true }
-  );
-
-  // Mouse swipe: step
+  // mouse swipe step
   let mDown = false;
   let mStartX = 0;
 
@@ -317,18 +320,17 @@ function setupControls() {
   });
 
   window.addEventListener("mouseup", (e) => {
-    if (!mDown || animLock) {
-      mDown = false;
-      return;
-    }
+    if (!mDown || animLock) { mDown = false; return; }
     mDown = false;
 
     const dx = e.clientX - mStartX;
     if (Math.abs(dx) < 60) return;
+
     if (dx < 0) next(1);
     else prev(1);
   });
 
+  // resize
   let r;
   window.addEventListener("resize", () => {
     clearTimeout(r);
