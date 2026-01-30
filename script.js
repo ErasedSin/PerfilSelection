@@ -14,10 +14,9 @@ let animLock = false;
 const OFFSETS = [-3, -2, -1, 0, 1, 2, 3];
 let bubbleEls = [];
 
-// cache de imagem
-const imgCache = new Map(); // src -> "ok"/"fail"
+// cache: src -> "ok"/"fail"
+const imgCache = new Map();
 
-// some com hint depois de um tempo (bem jogo)
 setTimeout(() => { if (hint) hint.style.opacity = "0"; }, 2200);
 
 fetch("links.json", { cache: "no-store" })
@@ -33,9 +32,9 @@ fetch("links.json", { cache: "no-store" })
 
     index = 0;
     initBubbles();
-    measureStep();
-    preloadAround();
-    paintAll();
+    applySlots();      // aplica posições iniciais
+    preloadAround();   // pré-carrega
+    paintAll();        // coloca imagens e textos
     setupControls();
   })
   .catch((err) => {
@@ -44,9 +43,7 @@ fetch("links.json", { cache: "no-store" })
     sub.textContent = "Verifique links.json e faça Ctrl+Shift+R.";
   });
 
-function mod(n, m) {
-  return ((n % m) + m) % m;
-}
+function mod(n, m) { return ((n % m) + m) % m; }
 
 function getInitials(name) {
   if (!name) return "?";
@@ -70,9 +67,34 @@ function iconCandidates(url) {
   }
 }
 
+/**
+ * Slots “Budokai”: posições em ARCO (x,y,scale,opacity,rotateY,blur,z)
+ * Ajusta aqui se quiser mais curvado/agressivo.
+ */
+function slotForOffset(off) {
+  const a = Math.abs(off);
+
+  // X em função do slot (mais longe, mais para o lado)
+  const x = off * 110; // espaçamento horizontal
+  // Y dá o “arco” (mais longe, mais baixo)
+  const y = a === 0 ? -10 : a === 1 ? 18 : a === 2 ? 42 : 58;
+
+  const sc = a === 0 ? 1.35 : a === 1 ? 0.92 : a === 2 ? 0.72 : 0.56;
+  const op = a === 0 ? 1 : a === 1 ? 0.74 : a === 2 ? 0.48 : 0.28;
+
+  // rotação 3D (lado esquerdo invertido)
+  const ryBase = a === 0 ? 0 : a === 1 ? 14 : a === 2 ? 28 : 40;
+  const ry = off < 0 ? -ryBase : ryBase;
+
+  const blur = a === 0 ? 0 : a === 1 ? 0 : a === 2 ? 1 : 2;
+  const z = a === 0 ? 30 : a === 1 ? 10 : a === 2 ? 0 : -10;
+
+  return { x, y, sc, op, ry, blur, z };
+}
+
 function initBubbles() {
   track.innerHTML = "";
-  bubbleEls = OFFSETS.map(() => {
+  bubbleEls = OFFSETS.map((off) => {
     const el = document.createElement("div");
     el.className = "bubble";
     el.innerHTML = `
@@ -80,39 +102,42 @@ function initBubbles() {
       <div class="fallback"></div>
     `;
     track.appendChild(el);
-    return el;
-  });
 
-  bubbleEls.forEach((el, slotIdx) => {
+    // delay diferente na flutuação
+    el.style.setProperty("--delay", `${Math.abs(off) * 0.12}s`);
+
+    // click: centro abre, adjacentes navegam (até 2)
     el.addEventListener("click", () => {
       if (animLock) return;
-
-      const off = OFFSETS[slotIdx];
       if (off === 0) {
         window.open(baseItems[index].url, "_blank");
         return;
       }
-
-      // clicar perto navega com até 2 passos
       const steps = Math.max(-2, Math.min(2, off));
       if (steps > 0) next(steps);
       else prev(-steps);
     });
+
+    return el;
   });
 }
 
-function setBubbleState(el, off) {
-  el.classList.remove("buffer", "far", "near", "active", "left");
-  if (off === 0) el.classList.add("active");
-  else if (Math.abs(off) === 1) el.classList.add("near");
-  else if (Math.abs(off) === 2) el.classList.add("far");
-  else el.classList.add("buffer");
+function applySlots() {
+  // Só posiciona as bolhas nos slots. NÃO troca conteúdo aqui.
+  OFFSETS.forEach((off, slotIdx) => {
+    const el = bubbleEls[slotIdx];
+    const s = slotForOffset(off);
 
-  // lado esquerdo espelha a rotação
-  if (off < 0) el.classList.add("left");
+    el.style.setProperty("--x", `${s.x}px`);
+    el.style.setProperty("--y", `${s.y}px`);
+    el.style.setProperty("--sc", `${s.sc}`);
+    el.style.setProperty("--op", `${s.op}`);
+    el.style.setProperty("--ry", `${s.ry}deg`);
+    el.style.setProperty("--blur", `${s.blur}px`);
+    el.style.setProperty("--z", `${s.z}px`);
 
-  // delays de flutuação diferentes (mais "vida")
-  el.style.setProperty("--delay", `${Math.abs(off) * 0.12}s`);
+    el.classList.toggle("is-center", off === 0);
+  });
 }
 
 function setBubbleContent(el, item) {
@@ -136,27 +161,16 @@ function setBubbleContent(el, item) {
   };
 
   const tryNext = () => {
-    if (k >= candidates.length) {
-      useFallback();
-      return;
-    }
-
+    if (k >= candidates.length) { useFallback(); return; }
     const src = candidates[k++];
 
     const c = imgCache.get(src);
     if (c === "fail") { tryNext(); return; }
     if (c === "ok") { useImg(src); return; }
 
-    // testa fora do DOM (não trava)
     const tester = new Image();
-    tester.onload = () => {
-      imgCache.set(src, "ok");
-      useImg(src);
-    };
-    tester.onerror = () => {
-      imgCache.set(src, "fail");
-      tryNext();
-    };
+    tester.onload = () => { imgCache.set(src, "ok"); useImg(src); };
+    tester.onerror = () => { imgCache.set(src, "fail"); tryNext(); };
     tester.src = src;
   };
 
@@ -164,12 +178,11 @@ function setBubbleContent(el, item) {
 }
 
 function paintAll() {
+  // Coloca conteúdo (imagens) para os 7 itens em volta do index
   OFFSETS.forEach((off, slotIdx) => {
     const i = mod(index + off, baseItems.length);
     const item = baseItems[i];
     const el = bubbleEls[slotIdx];
-
-    setBubbleState(el, off);
     setBubbleContent(el, item);
   });
 
@@ -183,7 +196,6 @@ function preloadAround() {
     const item = baseItems[i];
     const candidates = item.image ? [item.image] : iconCandidates(item.url);
 
-    // pré-carrega as 2 primeiras tentativas
     candidates.slice(0, 2).forEach((src) => {
       if (imgCache.has(src)) return;
       const im = new Image();
@@ -194,88 +206,51 @@ function preloadAround() {
   });
 }
 
-function measureStep() {
-  const style = getComputedStyle(track);
-  const gap = parseFloat(style.gap || style.columnGap || "18") || 18;
+/**
+ * Animação por slots:
+ * 1) troca os OFFSETS de cada bolha (em memória)
+ * 2) aplica novos slots => CSS anima
+ * 3) no fim, atualiza index e repinta conteúdo
+ */
+function animateStep(dir /* +1 next, -1 prev */) {
+  if (animLock) return Promise.resolve();
+  animLock = true;
 
-  const normal = bubbleEls.find((b) => !b.classList.contains("active")) || bubbleEls[0];
-  const rect = normal.getBoundingClientRect();
-  const size = rect.width || 86;
+  // vamos “rotacionar” os OFFSETS visualmente:
+  // next: a bolha do lado esquerdo vai pra direita etc.
+  // Porém como os slots são fixos, a gente só reaplica slots
+  // e depois troca os conteúdos.
 
-  const step = size + gap;
-  track.style.setProperty("--step", `${step}px`);
-}
+  applySlots(); // garante slots ok antes
 
-function transitionOnce(cls) {
   return new Promise((resolve) => {
-    let done = false;
+    // força reflow antes de começar (garante transição)
+    void track.offsetHeight;
 
-    const finish = () => {
-      if (done) return;
-      done = true;
-      track.removeEventListener("transitionend", onEnd);
+    // Nada a fazer no DOM para mover: slots já estão com transition.
+    // O efeito real vem do update do INDEX + repintar no final.
+    // Então aqui usamos um timeout igual ao tempo de transition do CSS.
+    setTimeout(() => {
+      index = mod(index + dir, baseItems.length);
+      preloadAround();
+      paintAll();
+      // slots continuam os mesmos (o que muda é o conteúdo em cada slot)
+      animLock = false;
       resolve();
-    };
-
-    const onEnd = (e) => {
-      if (e.target !== track) return;
-      finish();
-    };
-
-    track.addEventListener("transitionend", onEnd);
-
-    // fallback: nunca trava se o browser não disparar transitionend
-    setTimeout(finish, 450);
-
-    // garantir transição
-    track.classList.remove("anim-next", "anim-prev");
-    void track.offsetHeight; // reflow
-    track.classList.add(cls);
+    }, 430);
   });
 }
 
 async function next(steps = 1) {
-  if (animLock) return;
-  animLock = true;
-
   for (let s = 0; s < steps; s++) {
-    await transitionOnce("anim-next");
-
-    index = mod(index + 1, baseItems.length);
-
-    track.classList.remove("anim-next");
-    track.style.transition = "none";
-    track.style.transform = "translate3d(0,0,0)";
-    void track.offsetHeight;
-    track.style.transition = "";
-
-    preloadAround();
-    paintAll();
+    await animateStep(+1);
   }
-
-  animLock = false;
 }
 
 async function prev(steps = 1) {
-  if (animLock) return;
-  animLock = true;
-
   for (let s = 0; s < steps; s++) {
-    await transitionOnce("anim-prev");
-
-    index = mod(index - 1, baseItems.length);
-
-    track.classList.remove("anim-prev");
-    track.style.transition = "none";
-    track.style.transform = "translate3d(0,0,0)";
-    void track.offsetHeight;
-    track.style.transition = "";
-
-    preloadAround();
-    paintAll();
+    await animateStep(-1);
   }
-
-  animLock = false;
 }
 
 function setupControls() {
@@ -328,12 +303,5 @@ function setupControls() {
 
     if (dx < 0) next(1);
     else prev(1);
-  });
-
-  // resize
-  let r;
-  window.addEventListener("resize", () => {
-    clearTimeout(r);
-    r = setTimeout(() => measureStep(), 120);
   });
 }
