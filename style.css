@@ -1,239 +1,187 @@
 /* ===== Base ===== */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
-
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
 body{
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  overflow: hidden;
-  background: #05070b;
-  color: #fff;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  overflow:hidden;
+  background:#05070b;
+  color:#fff;
 }
 
-/* ===== Fundo (coloque assets/bg.jpg se quiser) ===== */
+/* ===== Fundo (opcional assets/bg.jpg) ===== */
 .bg{
-  position: fixed; inset: 0;
+  position:fixed;inset:0;
   background:
     radial-gradient(1200px 600px at 50% 35%, rgba(0,200,255,.18), transparent 60%),
     radial-gradient(900px 500px at 30% 70%, rgba(255,0,140,.10), transparent 60%),
     radial-gradient(900px 500px at 70% 75%, rgba(120,255,0,.08), transparent 60%),
     url("assets/bg.jpg") center/cover no-repeat;
-  filter: blur(22px) brightness(.55) saturate(1.08);
-  transform: scale(1.12);
-  z-index: -2;
+  filter:blur(22px) brightness(.55) saturate(1.08);
+  transform:scale(1.12);
+  z-index:-2;
 }
 .bg-overlay{
-  position: fixed; inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,.58), rgba(0,0,0,.86));
-  z-index: -1;
+  position:fixed;inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.58), rgba(0,0,0,.86));
+  z-index:-1;
 }
 
 /* ===== Layout ===== */
 .wrap{
-  height: 100%;
-  display: grid;
-  grid-template-rows: auto 1fr auto auto;
-  align-items: center;
-  justify-items: center;
-  padding: 18px;
-  gap: 10px;
+  height:100%;
+  display:grid;
+  grid-template-rows:auto 1fr auto auto;
+  align-items:center;
+  justify-items:center;
+  padding:18px;
+  gap:10px;
 }
 .top .hint{
-  opacity: .75;
-  font-size: 14px;
-  letter-spacing: .2px;
+  opacity:.75;
+  font-size:14px;
+  letter-spacing:.2px;
+  transition:opacity .35s ease;
 }
 
 /* ===== Stage ===== */
 .stage{
-  width: min(980px, 96vw);
-  display: grid;
-  grid-template-columns: 44px 1fr 44px;
-  align-items: center;
-  gap: 10px;
+  width:min(980px,96vw);
+  display:grid;
+  grid-template-columns:44px 1fr 44px;
+  align-items:center;
+  gap:10px;
+  overflow:hidden; /* corta o excesso do arco */
 }
 .nav{
-  height: 44px;
-  width: 44px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(10,12,18,.45);
-  color: rgba(255,255,255,.92);
-  border-radius: 12px;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-  transition: transform .12s ease, opacity .2s ease;
+  height:44px;width:44px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(10,12,18,.45);
+  color:rgba(255,255,255,.92);
+  border-radius:12px;
+  cursor:pointer;
+  backdrop-filter:blur(6px);
+  transition:transform .12s ease, opacity .2s ease;
 }
-.nav:active{ transform: scale(.96); }
-.nav:disabled{ opacity: .35; cursor: default; }
+.nav:active{transform:scale(.96)}
+.nav:disabled{opacity:.35;cursor:default}
 
-/* ===== Carrossel (Budokai step) ===== */
+/* ===== Viewport 3D ===== */
 .wheel-viewport{
-  width: 100%;
-  overflow: hidden;
-  user-select: none;
-  touch-action: pan-y;
-  padding: 22px 0;
-  cursor: grab;
+  width:100%;
+  height:260px;
+  position:relative;
+  user-select:none;
+  touch-action:pan-y;
+  cursor:grab;
 
-  /* 3D */
-  perspective: 900px;
-  perspective-origin: 50% 45%;
+  perspective:1000px;
+  perspective-origin:50% 45%;
 }
-.wheel-viewport:active{ cursor: grabbing; }
+.wheel-viewport:active{cursor:grabbing}
 
+/* Track agora é só “palco”, não se move */
 .wheel-track{
-  --gap: 18px;
-  --step: 104px; /* JS ajusta */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--gap);
-  will-change: transform;
-  transform: translate3d(0,0,0);
-  transform-style: preserve-3d;
+  position:relative;
+  width:100%;
+  height:100%;
+  transform-style:preserve-3d;
 }
 
-/* ===== Bolhas ===== */
+/* ===== Bolhas (AGORA ABSOLUTAMENTE POSICIONADAS) ===== */
 .bubble{
-  width: 86px;
-  height: 86px;
-  border-radius: 999px;
-  overflow: hidden;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:86px;height:86px;
+  border-radius:999px;
+  overflow:hidden;
 
-  border: 2px solid rgba(255,255,255,.10);
-  background: rgba(20,24,36,.50);
-  backdrop-filter: blur(6px);
+  display:grid;
+  place-items:center;
 
-  opacity: .40;
+  border:2px solid rgba(255,255,255,.10);
+  background:rgba(20,24,36,.50);
+  backdrop-filter:blur(6px);
 
-  /* animação base suave */
-  transition:
-    transform 380ms cubic-bezier(.22,.61,.36,1),
-    opacity 380ms ease,
-    filter 380ms ease,
-    border-color 380ms ease,
-    box-shadow 380ms ease;
+  transform-style:preserve-3d;
+  will-change:transform,opacity,filter;
 
-  cursor: pointer;
+  /* variáveis que o JS controla por “slot” */
+  --x: 0px;
+  --y: 0px;
+  --sc: 1;
+  --ry: 0deg;
+  --op: 1;
+  --blur: 0px;
+  --z: 0px; /* opcional */
 
-  /* flutuação (JS seta delays e base Y) */
+  /* Flutuação: JS define delay diferente */
   animation: floaty 3.2s ease-in-out infinite;
   animation-delay: var(--delay, 0s);
+
+  /* estado normal (sem movimento) */
+  transition:
+    transform 420ms cubic-bezier(.2,.9,.25,1),
+    opacity 360ms ease,
+    filter 360ms ease,
+    border-color 360ms ease,
+    box-shadow 420ms cubic-bezier(.2,.9,.25,1);
+
+  opacity:var(--op);
+  filter: blur(var(--blur)) saturate(1.02);
+  transform:
+    translate(-50%,-50%)
+    translate3d(var(--x), var(--y), var(--z))
+    rotateY(var(--ry))
+    scale(var(--sc));
 }
 
 .bubble img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  pointer-events: none;
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+  pointer-events:none;
 }
 .bubble .fallback{
-  font-weight: 850;
-  font-size: 20px;
-  color: rgba(255,255,255,.92);
-  display: none;
-  place-items: center;
-  width: 100%;
-  height: 100%;
+  display:none;
+  place-items:center;
+  width:100%;height:100%;
+  font-weight:850;
+  font-size:20px;
+  color:rgba(255,255,255,.92);
 }
 
-/* ===== Flutuação ===== */
-@keyframes floaty {
-  0%   { transform: translateY(var(--floatY, 0px)) translateZ(0) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); }
-  50%  { transform: translateY(calc(var(--floatY, 0px) - 8px)) translateZ(0) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); }
-  100% { transform: translateY(var(--floatY, 0px)) translateZ(0) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); }
-}
-
-/* ===== Estados (profundidade) ===== */
-/* Centro */
-.bubble.active{
-  opacity: 1;
+/* “Selecionado” (glow) */
+.bubble.is-center{
   border-color: rgba(0,200,255,.55);
   box-shadow:
     0 0 0 6px rgba(0,200,255,.06),
     0 0 26px rgba(0,200,255,.55),
     0 0 60px rgba(0,200,255,.18);
-
-  width: 148px;
-  height: 148px;
-
-  filter: blur(0px) saturate(1.06);
-
-  /* base usada também no keyframes */
-  --floatY: -10px;
-  --sc: 1;
-  --ry: 0deg;
 }
 
-/* Perto */
-.bubble.near{
-  opacity: 0.72;
-  filter: blur(0px) saturate(1.02);
-  border-color: rgba(255,255,255,.18);
-
-  --floatY: 12px;
-  --sc: 0.82;
-  --ry: 18deg;
-}
-
-/* Longe */
-.bubble.far{
-  opacity: 0.45;
-  filter: blur(1px) saturate(0.98);
-
-  --floatY: 26px;
-  --sc: 0.66;
-  --ry: 34deg;
-}
-
-/* Buffer (bem longe mas visível) */
-.bubble.buffer{
-  opacity: 0.28;
-  filter: blur(2px) saturate(0.95);
-  border-color: rgba(255,255,255,.06);
-
-  --floatY: 36px;
-  --sc: 0.52;
-  --ry: 44deg;
-}
-
-/* Inverte o rotateY do lado esquerdo */
-.bubble.left{
-  --ry: calc(var(--ry) * -1);
-}
-
-/* ===== Animação de passo do track ===== */
-.wheel-track.anim-next{
-  transition: transform 380ms cubic-bezier(.2,.9,.25,1) !important;
-  transform: translate3d(calc(var(--step) * -1), 0, 0) !important;
-}
-.wheel-track.anim-prev{
-  transition: transform 380ms cubic-bezier(.2,.9,.25,1) !important;
-  transform: translate3d(var(--step), 0, 0) !important;
+/* ===== Flutuação (mantém o arco) ===== */
+@keyframes floaty{
+  0%   { transform: translate(-50%,-50%) translate3d(var(--x), calc(var(--y) + 0px), var(--z)) rotateY(var(--ry)) scale(var(--sc)); }
+  50%  { transform: translate(-50%,-50%) translate3d(var(--x), calc(var(--y) - 8px), var(--z)) rotateY(var(--ry)) scale(var(--sc)); }
+  100% { transform: translate(-50%,-50%) translate3d(var(--x), calc(var(--y) + 0px), var(--z)) rotateY(var(--ry)) scale(var(--sc)); }
 }
 
 /* ===== Texto ===== */
 .label{
-  margin-top: 2px;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  text-shadow: 0 8px 24px rgba(0,0,0,.55);
+  margin-top:2px;
+  font-size:22px;
+  font-weight:800;
+  letter-spacing:.2px;
+  text-shadow:0 8px 24px rgba(0,0,0,.55);
 }
-.sub{
-  opacity: .7;
-  font-size: 13px;
-}
+.sub{opacity:.7;font-size:13px}
 
 /* ===== Mobile ===== */
-@media (max-width: 520px){
-  .stage{ grid-template-columns: 38px 1fr 38px; }
-  .nav{ height: 38px; width: 38px; border-radius: 10px; }
-  .wheel-track{ --gap: 14px; }
-  .bubble{ width: 72px; height: 72px; }
-  .bubble.active{ width: 132px; height: 132px; }
-  .label{ font-size: 20px; }
+@media (max-width:520px){
+  .stage{grid-template-columns:38px 1fr 38px}
+  .nav{height:38px;width:38px;border-radius:10px}
+  .wheel-viewport{height:240px}
+  .bubble{width:72px;height:72px}
+  .label{font-size:20px}
 }
