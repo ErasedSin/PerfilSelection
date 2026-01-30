@@ -1,6 +1,7 @@
-/* ====== Base ====== */
+/* ===== Base ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
+
 body{
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   overflow: hidden;
@@ -8,7 +9,7 @@ body{
   color: #fff;
 }
 
-/* ====== Fundo (coloque assets/bg.jpg se quiser) ====== */
+/* ===== Fundo (coloque assets/bg.jpg se quiser) ===== */
 .bg{
   position: fixed; inset: 0;
   background:
@@ -26,7 +27,7 @@ body{
   z-index: -1;
 }
 
-/* ====== Layout ====== */
+/* ===== Layout ===== */
 .wrap{
   height: 100%;
   display: grid;
@@ -42,7 +43,7 @@ body{
   letter-spacing: .2px;
 }
 
-/* ====== Stage ====== */
+/* ===== Stage ===== */
 .stage{
   width: min(980px, 96vw);
   display: grid;
@@ -64,29 +65,34 @@ body{
 .nav:active{ transform: scale(.96); }
 .nav:disabled{ opacity: .35; cursor: default; }
 
-/* ====== Carrossel (Budokai step) ====== */
+/* ===== Carrossel (Budokai step) ===== */
 .wheel-viewport{
   width: 100%;
   overflow: hidden;
   user-select: none;
   touch-action: pan-y;
-  padding: 22px 0; /* espaço pro glow */
+  padding: 22px 0;
   cursor: grab;
+
+  /* 3D */
+  perspective: 900px;
+  perspective-origin: 50% 45%;
 }
 .wheel-viewport:active{ cursor: grabbing; }
 
 .wheel-track{
   --gap: 18px;
-  --step: 104px; /* será ajustado via JS */
+  --step: 104px; /* JS ajusta */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--gap);
   will-change: transform;
   transform: translate3d(0,0,0);
+  transform-style: preserve-3d;
 }
 
-/* 7 bolhas (2 buffer em cada lado + 1 central + 2) */
+/* ===== Bolhas ===== */
 .bubble{
   width: 86px;
   height: 86px;
@@ -101,73 +107,115 @@ body{
   backdrop-filter: blur(6px);
 
   opacity: .40;
-  transform: scale(.74);
-  filter: blur(1px) saturate(1.02);
 
+  /* animação base suave */
   transition:
-    transform 260ms cubic-bezier(.2,.9,.25,1),
-    opacity 220ms ease,
-    filter 220ms ease,
-    border-color 220ms ease,
-    box-shadow 260ms cubic-bezier(.2,.9,.25,1);
+    transform 380ms cubic-bezier(.22,.61,.36,1),
+    opacity 380ms ease,
+    filter 380ms ease,
+    border-color 380ms ease,
+    box-shadow 380ms ease;
 
   cursor: pointer;
+
+  /* flutuação (JS seta delays e base Y) */
+  animation: floaty 3.2s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
 }
+
 .bubble img{
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
 }
 .bubble .fallback{
   font-weight: 850;
   font-size: 20px;
   color: rgba(255,255,255,.92);
+  display: none;
+  place-items: center;
+  width: 100%;
+  height: 100%;
 }
 
-/* estados por distância */
-.bubble.near{
-  opacity: .72;
-  transform: scale(.90);
-  filter: blur(0px);
-  border-color: rgba(255,255,255,.18);
-}
-.bubble.far{
-  opacity: .32;
-  transform: scale(.70);
-  filter: blur(1px);
-}
-.bubble.buffer{
-  opacity: .14;
-  transform: scale(.62);
-  filter: blur(2px);
-  border-color: rgba(255,255,255,.06);
+/* ===== Flutuação ===== */
+@keyframes floaty {
+  0%   { transform: translateY(var(--floatY, 0px)) translateZ(0) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); }
+  50%  { transform: translateY(calc(var(--floatY, 0px) - 8px)) translateZ(0) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); }
+  100% { transform: translateY(var(--floatY, 0px)) translateZ(0) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); }
 }
 
+/* ===== Estados (profundidade) ===== */
+/* Centro */
 .bubble.active{
-  width: 148px;
-  height: 148px;
   opacity: 1;
-  transform: scale(1);
-  filter: blur(0px) saturate(1.05);
   border-color: rgba(0,200,255,.55);
   box-shadow:
     0 0 0 6px rgba(0,200,255,.06),
     0 0 26px rgba(0,200,255,.55),
     0 0 60px rgba(0,200,255,.18);
+
+  width: 148px;
+  height: 148px;
+
+  filter: blur(0px) saturate(1.06);
+
+  /* base usada também no keyframes */
+  --floatY: -10px;
+  --sc: 1;
+  --ry: 0deg;
 }
 
-/* animação do track (step) */
+/* Perto */
+.bubble.near{
+  opacity: 0.72;
+  filter: blur(0px) saturate(1.02);
+  border-color: rgba(255,255,255,.18);
+
+  --floatY: 12px;
+  --sc: 0.82;
+  --ry: 18deg;
+}
+
+/* Longe */
+.bubble.far{
+  opacity: 0.45;
+  filter: blur(1px) saturate(0.98);
+
+  --floatY: 26px;
+  --sc: 0.66;
+  --ry: 34deg;
+}
+
+/* Buffer (bem longe mas visível) */
+.bubble.buffer{
+  opacity: 0.28;
+  filter: blur(2px) saturate(0.95);
+  border-color: rgba(255,255,255,.06);
+
+  --floatY: 36px;
+  --sc: 0.52;
+  --ry: 44deg;
+}
+
+/* Inverte o rotateY do lado esquerdo */
+.bubble.left{
+  --ry: calc(var(--ry) * -1);
+}
+
+/* ===== Animação de passo do track ===== */
 .wheel-track.anim-next{
-  transition: transform 380ms cubic-bezier(.2,.9,.25,1);
-  transform: translate3d(calc(var(--step) * -1), 0, 0);
+  transition: transform 380ms cubic-bezier(.2,.9,.25,1) !important;
+  transform: translate3d(calc(var(--step) * -1), 0, 0) !important;
 }
 .wheel-track.anim-prev{
-  transition: transform 380ms cubic-bezier(.2,.9,.25,1);
-  transform: translate3d(var(--step), 0, 0);
+  transition: transform 380ms cubic-bezier(.2,.9,.25,1) !important;
+  transform: translate3d(var(--step), 0, 0) !important;
 }
 
-/* ====== Texto ====== */
+/* ===== Texto ===== */
 .label{
   margin-top: 2px;
   font-size: 22px;
@@ -180,7 +228,7 @@ body{
   font-size: 13px;
 }
 
-/* Mobile */
+/* ===== Mobile ===== */
 @media (max-width: 520px){
   .stage{ grid-template-columns: 38px 1fr 38px; }
   .nav{ height: 38px; width: 38px; border-radius: 10px; }
@@ -189,40 +237,3 @@ body{
   .bubble.active{ width: 132px; height: 132px; }
   .label{ font-size: 20px; }
 }
-/* Estados de distância das bolhas (controle visual da roda) */
-
-.bubble {
-  transition:
-    transform 0.38s cubic-bezier(.22,.61,.36,1),
-    opacity 0.38s ease,
-    box-shadow 0.38s ease;
-}
-
-/* Bolha central */
-.bubble.active {
-  transform: scale(1);
-  opacity: 1;
-  z-index: 4;
-}
-
-/* Vizinhas imediatas */
-.bubble.near {
-  transform: scale(0.78);
-  opacity: 0.55;
-  z-index: 3;
-}
-
-/* Um pouco mais longe */
-.bubble.far {
-  transform: scale(0.6);
-  opacity: 0.35;
-  z-index: 2;
-}
-
-/* Buffer (bem longe, mas visível) */
-.bubble.buffer {
-  transform: scale(0.45);
-  opacity: 0.22;
-  z-index: 1;
-}
-
