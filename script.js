@@ -224,7 +224,7 @@ function addRow(k = "gh", v = "") {
     const d = detect(inp.value);
     if (d && !(d.k === "site" && PLATFORMS[sel.value].site)) { sel.value = d.k; inp.value = d.v; }
   });
-  row.querySelector(".x").addEventListener("click", () => { row.remove(); edAdd.disabled = false; });
+  row.querySelector(".x").addEventListener("click", () => { row.remove(); edAdd.disabled = false; autosave(); });
   edRows.appendChild(row);
   edAdd.disabled = edRows.children.length >= MAX_LINKS;
 }
@@ -245,12 +245,32 @@ function openEditor() {
 }
 
 document.getElementById("editBtn").addEventListener("click", openEditor);
-edAdd.addEventListener("click", () => addRow("ig"));
-edForm.addEventListener("submit", () => {
+edAdd.addEventListener("click", () => { addRow("ig"); autosave(); });
+// Salva sozinho enquanto a pessoa digita; a rede só é redesenhada ao fechar o painel.
+let saveTimer = 0;
+let dirty = false;
+
+function saveNow() {
+  clearTimeout(saveTimer);
+  saveTimer = 0;
   config = readForm();
   saveConfig(config);
-  render();
+  dirty = true;
+  edMsg.textContent = "Salvo automaticamente ✓";
+}
+
+function autosave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 400);
+}
+
+edForm.addEventListener("input", autosave);
+edForm.addEventListener("change", autosave);
+dlg.addEventListener("close", () => {
+  if (saveTimer) saveNow();
+  if (dirty) { dirty = false; render(); }
 });
+window.addEventListener("pagehide", () => { if (saveTimer) saveNow(); });
 edCopy.addEventListener("click", async () => {
   const link = location.href.split("#")[0] + "#" + encode(readForm());
   try {

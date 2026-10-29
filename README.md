@@ -7,7 +7,7 @@ Página de links em formato de rede: a pessoa fica no centro, e cada rede social
 ## Como usar
 1. Abra a página e clique em **Editar**.
 2. Escreva o nome e cole o link de cada perfil (ou escolha a rede e digite o usuário).
-3. Clique em **Aplicar**. As fotos vêm automaticamente das redes.
+3. Tudo é **salvo automaticamente** enquanto você digita. Clique em **Pronto** para ver o resultado. As fotos vêm automaticamente das redes.
 4. Clique em **Copiar link para compartilhar** e use esse endereço no currículo, na bio ou em um QR code.
 
 Não precisa editar nenhum arquivo nem subir imagens.
