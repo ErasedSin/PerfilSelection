@@ -22,17 +22,4 @@ Edite o `links.json`:
 
 Sem `image`, o site usa o ícone do próprio site do link ou as iniciais do nome.
 
-## Rodar localmente
-O navegador bloqueia o `links.json` em `file://`. Use um servidor local:
 
-```bash
-python -m http.server 8000
-```
-
-Abra http://localhost:8000.
-
-## Publicar
-No repositório: **Settings > Pages > Deploy from a branch > main / root**.
-
-## Imagens
-Use imagens que você tem direito de publicar.
