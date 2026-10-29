@@ -43,22 +43,6 @@ O primeiro item da lista é o que aparece no centro ao abrir a página.
 
 Para trocar o fundo, coloque uma imagem em `assets/bg.jpg`.
 
-## Rodar no seu computador
 
-O navegador bloqueia a leitura do `links.json` quando a página é aberta direto do arquivo (`file://`). Use um servidor local:
 
-```bash
-python -m http.server 8000
-```
 
-Depois abra http://localhost:8000.
-
-## Publicar no GitHub Pages
-
-1. No repositório, abra **Settings > Pages**.
-2. Em **Source**, escolha **Deploy from a branch**, a branch `main` e a pasta `/ (root)`.
-3. Salve. Em alguns minutos o site fica em `https://SEU-USUARIO.github.io/PerfilSelection/`.
-
-## Imagens
-
-Use imagens que você tem direito de publicar. Fotos pessoais e artes de terceiros ficam visíveis para qualquer pessoa que abrir o repositório.
