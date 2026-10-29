@@ -1,6 +1,8 @@
 const net = document.getElementById("net");
 const wires = document.getElementById("wires");
 const status = document.getElementById("status");
+
+const bg = typeof Bg !== "undefined" ? Bg : { set() {}, resize() {}, draw() {} };
 const NS = "http://www.w3.org/2000/svg";
 const MAX_LINKS = 8;
 const STORE = "perfilselection:v2";
@@ -11,7 +13,7 @@ const nodes = [], wireEls = [], paths = [];
 let ring, hub;
 let W = 0, H = 0, rot = 0, speed = 1, px = 0, py = 0, tx = 0, ty = 0, last = 0;
 
-/* ===== Redes: como montar o link e de onde vem a foto ===== */
+
 const unav = (p) => (v) => `https://unavatar.io/${p}/${encodeURIComponent(v)}?fallback=false`;
 const PLATFORMS = {
   gh: { label: "GitHub", host: ["github.com"], url: (v) => `https://github.com/${v}`, avatar: (v) => `https://github.com/${v}.png?size=256` },
@@ -25,7 +27,7 @@ const PLATFORMS = {
   site: { label: "Site", site: true },
 };
 
-// Valida a entrada (também a que vem da URL, que é não confiável): só http(s) e usuários simples.
+
 function normalize(k, raw) {
   const P = PLATFORMS[k];
   if (!P) return null;
@@ -41,7 +43,7 @@ function normalize(k, raw) {
   return /^[\w.-]{1,50}$/.test(v) ? { k, v } : null;
 }
 
-// Reconhece a rede e o usuário a partir de um link colado.
+
 function detect(text) {
   text = String(text).trim();
   if (!/^(https?:\/\/|www\.)/i.test(text)) return null;
@@ -72,7 +74,7 @@ function toItem({ k, v, p }) {
   return { name: k === "site" ? host : P.label, url, group: P.group, images };
 }
 
-/* ===== Dados: salvos no navegador (localStorage) e, sem fotos, no #hash do link ===== */
+
 const BGS = { rede: "Rede de partículas", chuva: "Chuva digital", estrelas: "Estrelas", aurora: "Aurora", nenhum: "Nenhum (mais leve)" };
 const isPhoto = (p) => typeof p === "string" && p.length < 200000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p);
 
@@ -112,7 +114,7 @@ function loadConfig() {
   if (location.hash.length > 1) {
     const c = decode(location.hash.slice(1));
     if (c.links.length) {
-      // Fotos enviadas ficam só neste aparelho: reaproveita as que combinam com o mesmo link.
+
       c.links.forEach((l) => { const m = local?.links.find((x) => x.k === l.k && x.v === l.v); if (m?.p) l.p = m.p; });
       c.cp = local?.cp || "";
       return c;
@@ -128,7 +130,7 @@ function saveConfig(cfg) {
   return ok;
 }
 
-/* ===== Montagem da rede ===== */
+
 function svg(tag, attrs) {
   const el = document.createElementNS(NS, tag);
   for (const k in attrs) el.setAttribute(k, attrs[k]);
@@ -166,7 +168,7 @@ function clearNet() {
 
 function render() {
   clearNet();
-  Bg.set(config.bg);
+  bg.set(config.bg);
   items = config.links.map(toItem);
   const name = config.name || "Seu nome";
 
@@ -222,7 +224,7 @@ function render() {
   status.textContent = items.length ? "" : "Toque em Editar e adicione os seus links.";
 }
 
-/* ===== Editor ===== */
+
 const dlg = document.getElementById("editor");
 const edForm = document.getElementById("edForm");
 const edName = document.getElementById("edName");
@@ -235,7 +237,7 @@ const edMsg = document.getElementById("edMsg");
 const selectHTML = Object.entries(PLATFORMS).map(([k, p]) => `<option value="${k}">${p.label}</option>`).join("");
 edBg.innerHTML = Object.entries(BGS).map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
 
-// Foto enviada: recorta o centro em quadrado, reduz para 192 px e guarda como JPEG pequeno.
+
 async function resizeToJpeg(file, size = 192) {
   const bmp = await createImageBitmap(file);
   const c = document.createElement("canvas");
@@ -316,11 +318,11 @@ function openEditor() {
 }
 
 wirePhoto(edCenterPhoto);
-edBg.addEventListener("change", () => Bg.set(edBg.value));
+edBg.addEventListener("change", () => bg.set(edBg.value));
 document.getElementById("editBtn").addEventListener("click", openEditor);
 edAdd.addEventListener("click", () => { addRow("ig"); autosave(); });
 
-// Salva sozinho enquanto a pessoa mexe; a rede só é redesenhada ao fechar o painel.
+
 let saveTimer = 0;
 let dirty = false;
 
@@ -357,7 +359,7 @@ edCopy.addEventListener("click", async () => {
   }
 });
 
-/* ===== Início ===== */
+
 config = loadConfig();
 render();
 resize();
@@ -385,26 +387,26 @@ function resize() {
   W = net.clientWidth;
   H = net.clientHeight;
   wires.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  Bg.resize();
+  bg.resize();
 }
 
 function frame(t) {
   const dt = Math.min(50, t - last) / 1000;
   last = t;
   if (!reduce) {
-    // Passar o mouse num link pausa a órbita aos poucos, para facilitar o clique.
+    
     const target = net.classList.contains("has-active") ? 0 : 1;
     speed += (target - speed) * 0.08;
     rot += dt * 0.12 * speed;
     px += (tx - px) * 0.06;
     py += (ty - py) * 0.06;
-    Bg.draw(t);
+    bg.draw(t);
   }
   place(t);
   if (!reduce) requestAnimationFrame(frame);
 }
 
-// Posiciona nós e linhas: órbita lenta, respiração do raio e parallax com o mouse.
+
 function place(t) {
   if (!hub) return;
   const n = items.length;
