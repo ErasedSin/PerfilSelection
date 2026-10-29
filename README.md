@@ -52,3 +52,7 @@ No editor, escolha: rede de partículas, chuva digital, estrelas, aurora ou nenh
 
 ## Formatos
 No editor, o campo Formato troca a disposição dos links: órbita, árvore, sistema solar, constelação ou espiral.
+
+## Adicionar links sem digitar
+- **Colar link copiado:** no app da rede, abra o perfil, toque em compartilhar e copie o link. Volte à página e toque em "Colar link copiado".
+- **Compartilhar direto (Android):** instale a página como app (menu do Chrome, "Instalar app"). Depois, no app da rede, use Compartilhar e escolha "Rede de links": o link é adicionado sozinho. No iPhone isso não funciona.

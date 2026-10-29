@@ -49,9 +49,24 @@ function detect(text) {
     const k = Object.keys(PLATFORMS).find((key) => (PLATFORMS[key].host || []).some((h) => host === h || host.endsWith("." + h)));
     if (!k) return { k: "site", v: u.href };
     const seg = u.pathname.split("/").filter(Boolean);
+    const reserved = {
+      ig: ["p", "reel", "reels", "stories", "explore", "tv", "accounts"],
+      x: ["i", "home", "search", "intent", "hashtag", "share"],
+      yt: ["watch", "channel", "playlist", "shorts", "c", "user", "results"],
+    };
+    if (k === "tt" && !(seg[0] || "").startsWith("@")) return { k: "site", v: u.href };
+    if (k === "ln" && seg[0] !== "in") return { k: "site", v: u.href };
+    if ((reserved[k] || []).includes((seg[0] || "").toLowerCase())) return { k: "site", v: u.href };
     const v = (k === "ln" ? seg[1] : seg[0] || "").replace(/^@/, "");
     return v ? { k, v } : null;
   } catch { return null; }
+}
+
+function linkFromText(text) {
+  const m = String(text).match(/https?:\/\/[^\s]+/i);
+  if (!m) return null;
+  const d = detect(m[0]);
+  return d ? normalize(d.k, d.v) : null;
 }
 
 function resolve(k, raw) {
@@ -229,6 +244,7 @@ const edCenterPhoto = document.getElementById("edCenterPhoto");
 const edRows = document.getElementById("edRows");
 const edAdd = document.getElementById("edAdd");
 const edCopy = document.getElementById("edCopy");
+const edPaste = document.getElementById("edPaste");
 const edMsg = document.getElementById("edMsg");
 const selectHTML = Object.entries(PLATFORMS).map(([k, p]) => `<option value="${k}">${p.label}</option>`).join("");
 edLayout.innerHTML = Object.entries(LAYOUT_LABELS).map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
@@ -325,6 +341,31 @@ edLayout.addEventListener("change", () => {
 document.getElementById("editBtn").addEventListener("click", openEditor);
 edAdd.addEventListener("click", () => { addRow("ig"); autosave(); });
 
+function addFromText(text) {
+  const l = linkFromText(text);
+  if (!l) return "Não achei um link de perfil no que foi copiado.";
+  if (readForm().links.some((x) => x.k === l.k && x.v === l.v)) return "Esse link já está na lista.";
+  const empty = [...edRows.children].find((r) => !r.querySelector("input").value.trim());
+  if (empty) {
+    empty.querySelector("select").value = l.k;
+    empty.querySelector("input").value = l.v;
+  } else if (edRows.children.length < MAX_LINKS) {
+    addRow(l.k, l.v);
+  } else {
+    return "Limite de links atingido.";
+  }
+  autosave();
+  return `Adicionado: ${PLATFORMS[l.k].label}`;
+}
+
+edPaste.addEventListener("click", async () => {
+  try {
+    edMsg.textContent = addFromText(await navigator.clipboard.readText());
+  } catch {
+    edMsg.textContent = "Não consegui ler o que você copiou. Cole direto no campo do link.";
+  }
+});
+
 let saveTimer = 0;
 let dirty = false;
 
@@ -369,6 +410,24 @@ if (viewOnly) {
   document.getElementById("createLink").hidden = false;
 }
 
+const shared = new URLSearchParams(location.search);
+const sharedText = ["url", "text", "title"].map((k) => shared.get(k)).filter(Boolean).join(" ");
+let sharedMsg = "";
+if (sharedText) {
+  history.replaceState(null, "", location.pathname + location.hash);
+  const l = linkFromText(sharedText);
+  if (!l) sharedMsg = "Não achei um link de perfil no que foi compartilhado.";
+  else if (config.links.some((x) => x.k === l.k && x.v === l.v)) sharedMsg = "Esse link já está na lista.";
+  else if (config.links.length >= MAX_LINKS) sharedMsg = "Limite de links atingido.";
+  else {
+    config.links.push(l);
+    saveConfig(config);
+    sharedMsg = `Adicionado: ${PLATFORMS[l.k].label}`;
+  }
+}
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
 render();
 resize();
 window.addEventListener("resize", resize);
@@ -377,7 +436,12 @@ window.addEventListener("pointermove", (e) => {
   ty = (e.clientY / innerHeight - 0.5) * 28;
 });
 requestAnimationFrame(frame);
-if (!config.links.length && !viewOnly) openEditor();
+if (sharedText) {
+  openEditor();
+  edMsg.textContent = sharedMsg;
+} else if (!config.links.length && !viewOnly) {
+  openEditor();
+}
 
 function typeName(el, text) {
   if (reduce) { el.textContent = text; return; }
