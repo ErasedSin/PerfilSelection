@@ -1,16 +1,14 @@
 const net = document.getElementById("net");
 const wires = document.getElementById("wires");
 const status = document.getElementById("status");
-const fx = document.getElementById("fx");
-const fctx = fx.getContext("2d");
 const NS = "http://www.w3.org/2000/svg";
 const MAX_LINKS = 8;
-const STORE = "perfilselection:v1";
+const STORE = "perfilselection:v2";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-let items = [], config = { name: "", links: [] };
+let items = [], config = { name: "", cp: "", bg: "rede", links: [] };
 const nodes = [], wireEls = [], paths = [];
-let ring, hub, dots = [];
+let ring, hub;
 let W = 0, H = 0, rot = 0, speed = 1, px = 0, py = 0, tx = 0, ty = 0, last = 0;
 
 /* ===== Redes: como montar o link e de onde vem a foto ===== */
@@ -63,20 +61,25 @@ function resolve(k, raw) {
   return d && !(d.k === "site" && PLATFORMS[k].site) ? normalize(d.k, d.v) : normalize(k, raw);
 }
 
-function toItem({ k, v }) {
+function toItem({ k, v, p }) {
   const P = PLATFORMS[k];
   const url = P.site ? v : P.url(encodeURIComponent(v));
   const host = new URL(url).hostname.replace(/^www\./, "");
   const images = [];
+  if (p) images.push(p);
   if (P.avatar) images.push(P.avatar(v));
   images.push(`https://www.google.com/s2/favicons?domain=${host}&sz=256`);
   return { name: k === "site" ? host : P.label, url, group: P.group, images };
 }
 
-/* ===== Dados: #hash (link compartilhável) > localStorage ===== */
+/* ===== Dados: salvos no navegador (localStorage) e, sem fotos, no #hash do link ===== */
+const BGS = { rede: "Rede de partículas", chuva: "Chuva digital", estrelas: "Estrelas", aurora: "Aurora", nenhum: "Nenhum (mais leve)" };
+const isPhoto = (p) => typeof p === "string" && p.length < 200000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p);
+
 function encode(cfg) {
   const p = new URLSearchParams();
   if (cfg.name) p.set("n", cfg.name);
+  if (cfg.bg && cfg.bg !== "rede") p.set("b", cfg.bg);
   cfg.links.forEach((l) => p.append("l", `${l.k}:${l.v}`));
   return p.toString();
 }
@@ -87,25 +90,42 @@ function decode(str) {
     const i = s.indexOf(":");
     return i > 0 ? normalize(s.slice(0, i), s.slice(i + 1)) : null;
   }).filter(Boolean);
-  return { name: (p.get("n") || "").slice(0, 40), links };
+  return { name: (p.get("n") || "").slice(0, 40), cp: "", bg: BGS[p.get("b")] ? p.get("b") : "rede", links };
+}
+
+function fromStored(o) {
+  if (!o || typeof o !== "object") return null;
+  const links = (Array.isArray(o.links) ? o.links : []).slice(0, MAX_LINKS).map((l) => {
+    const n = normalize(l?.k, l?.v);
+    if (n && isPhoto(l.p)) n.p = l.p;
+    return n;
+  }).filter(Boolean);
+  return { name: String(o.name || "").slice(0, 40), cp: isPhoto(o.cp) ? o.cp : "", bg: BGS[o.bg] ? o.bg : "rede", links };
+}
+
+function readLocal() {
+  try { return fromStored(JSON.parse(localStorage.getItem(STORE))); } catch { return null; }
 }
 
 function loadConfig() {
+  const local = readLocal();
   if (location.hash.length > 1) {
     const c = decode(location.hash.slice(1));
-    if (c.links.length) return c;
+    if (c.links.length) {
+      // Fotos enviadas ficam só neste aparelho: reaproveita as que combinam com o mesmo link.
+      c.links.forEach((l) => { const m = local?.links.find((x) => x.k === l.k && x.v === l.v); if (m?.p) l.p = m.p; });
+      c.cp = local?.cp || "";
+      return c;
+    }
   }
-  try {
-    const s = localStorage.getItem(STORE);
-    if (s) { const c = decode(s); if (c.links.length) return c; }
-  } catch {}
-  return { name: "", links: [] };
+  return local && local.links.length ? local : { name: "", cp: "", bg: "rede", links: [] };
 }
 
 function saveConfig(cfg) {
-  const s = encode(cfg);
-  try { localStorage.setItem(STORE, s); } catch {}
-  history.replaceState(null, "", "#" + s);
+  let ok = true;
+  try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch { ok = false; }
+  history.replaceState(null, "", "#" + encode(cfg));
+  return ok;
 }
 
 /* ===== Montagem da rede ===== */
@@ -146,6 +166,7 @@ function clearNet() {
 
 function render() {
   clearNet();
+  Bg.set(config.bg);
   items = config.links.map(toItem);
   const name = config.name || "Seu nome";
 
@@ -154,7 +175,7 @@ function render() {
   hub.innerHTML = `<span class="spin"></span>` + faceHTML;
   typeName(hub.querySelector(".name"), name);
   net.appendChild(hub);
-  loadIcon(hub.querySelector(".face"), { name, images: items[0]?.images });
+  loadIcon(hub.querySelector(".face"), { name, images: config.cp ? [config.cp] : items[0]?.images });
 
   ring = svg("path", { class: "ring" });
   wires.appendChild(ring);
@@ -205,21 +226,66 @@ function render() {
 const dlg = document.getElementById("editor");
 const edForm = document.getElementById("edForm");
 const edName = document.getElementById("edName");
+const edBg = document.getElementById("edBg");
+const edCenterPhoto = document.getElementById("edCenterPhoto");
 const edRows = document.getElementById("edRows");
 const edAdd = document.getElementById("edAdd");
 const edCopy = document.getElementById("edCopy");
 const edMsg = document.getElementById("edMsg");
 const selectHTML = Object.entries(PLATFORMS).map(([k, p]) => `<option value="${k}">${p.label}</option>`).join("");
+edBg.innerHTML = Object.entries(BGS).map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
 
-function addRow(k = "gh", v = "") {
+// Foto enviada: recorta o centro em quadrado, reduz para 192 px e guarda como JPEG pequeno.
+async function resizeToJpeg(file, size = 192) {
+  const bmp = await createImageBitmap(file);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const s = Math.min(bmp.width, bmp.height);
+  c.getContext("2d").drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, size, size);
+  if (bmp.close) bmp.close();
+  return c.toDataURL("image/jpeg", 0.85);
+}
+
+function pickPhoto(done) {
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = "image/*";
+  inp.addEventListener("change", async () => {
+    const f = inp.files[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/") || f.size > 15e6) { edMsg.textContent = "Escolha uma imagem de até 15 MB."; return; }
+    try { done(await resizeToJpeg(f)); } catch { edMsg.textContent = "Não consegui ler essa imagem."; }
+  });
+  inp.click();
+}
+
+function setPhotoBtn(btn, p) {
+  btn.dataset.p = p || "";
+  btn.style.backgroundImage = p ? `url("${p}")` : "";
+  btn.classList.toggle("has", !!p);
+  btn.innerHTML = p ? '<span class="ph-del" title="Remover foto">×</span>' : "📷";
+  btn.title = p ? "Trocar foto" : "Enviar foto";
+}
+
+function wirePhoto(btn) {
+  btn.addEventListener("click", (e) => {
+    if (e.target.closest(".ph-del")) { setPhotoBtn(btn, ""); autosave(); return; }
+    pickPhoto((data) => { setPhotoBtn(btn, data); autosave(); });
+  });
+}
+
+function addRow(k = "gh", v = "", p = "") {
   if (edRows.children.length >= MAX_LINKS) return;
   const row = document.createElement("div");
   row.className = "row";
-  row.innerHTML = `<select aria-label="Rede">${selectHTML}</select><input type="text" placeholder="link do perfil ou usuário" aria-label="Link ou usuário" autocomplete="off"><button type="button" class="x" aria-label="Remover link">✕</button>`;
+  row.innerHTML = `<select aria-label="Rede">${selectHTML}</select><input type="text" placeholder="link do perfil ou usuário" aria-label="Link ou usuário" autocomplete="off"><button type="button" class="ph" aria-label="Foto deste link"></button><button type="button" class="x" aria-label="Remover link">✕</button>`;
   const sel = row.querySelector("select");
   const inp = row.querySelector("input");
+  const ph = row.querySelector(".ph");
   sel.value = k;
   inp.value = v;
+  setPhotoBtn(ph, p);
+  wirePhoto(ph);
   inp.addEventListener("change", () => {
     const d = detect(inp.value);
     if (d && !(d.k === "site" && PLATFORMS[sel.value].site)) { sel.value = d.k; inp.value = d.v; }
@@ -230,23 +296,31 @@ function addRow(k = "gh", v = "") {
 }
 
 function readForm() {
-  const links = [...edRows.children]
-    .map((r) => resolve(r.querySelector("select").value, r.querySelector("input").value))
-    .filter(Boolean);
-  return { name: edName.value.trim().slice(0, 40), links };
+  const links = [...edRows.children].map((r) => {
+    const l = resolve(r.querySelector("select").value, r.querySelector("input").value);
+    const p = r.querySelector(".ph").dataset.p;
+    if (l && p) l.p = p;
+    return l;
+  }).filter(Boolean);
+  return { name: edName.value.trim().slice(0, 40), cp: edCenterPhoto.dataset.p || "", bg: edBg.value, links };
 }
 
 function openEditor() {
   edName.value = config.name;
+  edBg.value = config.bg;
+  setPhotoBtn(edCenterPhoto, config.cp);
   edRows.innerHTML = "";
   edMsg.textContent = "";
-  (config.links.length ? config.links : [{ k: "gh", v: "" }]).forEach((l) => addRow(l.k, l.v));
+  (config.links.length ? config.links : [{ k: "gh", v: "" }]).forEach((l) => addRow(l.k, l.v, l.p));
   if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
 }
 
+wirePhoto(edCenterPhoto);
+edBg.addEventListener("change", () => Bg.set(edBg.value));
 document.getElementById("editBtn").addEventListener("click", openEditor);
 edAdd.addEventListener("click", () => { addRow("ig"); autosave(); });
-// Salva sozinho enquanto a pessoa digita; a rede só é redesenhada ao fechar o painel.
+
+// Salva sozinho enquanto a pessoa mexe; a rede só é redesenhada ao fechar o painel.
 let saveTimer = 0;
 let dirty = false;
 
@@ -254,9 +328,8 @@ function saveNow() {
   clearTimeout(saveTimer);
   saveTimer = 0;
   config = readForm();
-  saveConfig(config);
   dirty = true;
-  edMsg.textContent = "Salvo automaticamente ✓";
+  edMsg.textContent = saveConfig(config) ? "Salvo automaticamente ✓" : "Não foi possível salvar neste navegador.";
 }
 
 function autosave() {
@@ -271,11 +344,14 @@ dlg.addEventListener("close", () => {
   if (dirty) { dirty = false; render(); }
 });
 window.addEventListener("pagehide", () => { if (saveTimer) saveNow(); });
+
 edCopy.addEventListener("click", async () => {
-  const link = location.href.split("#")[0] + "#" + encode(readForm());
+  const cfg = readForm();
+  const hasPhoto = cfg.cp || cfg.links.some((l) => l.p);
+  const link = location.href.split("#")[0] + "#" + encode(cfg);
   try {
     await navigator.clipboard.writeText(link);
-    edMsg.textContent = "Link copiado. Cole no currículo ou nas redes.";
+    edMsg.textContent = "Link copiado." + (hasPhoto ? " As fotos enviadas ficam só neste aparelho e não vão no link." : "");
   } catch {
     edMsg.textContent = link;
   }
@@ -309,39 +385,7 @@ function resize() {
   W = net.clientWidth;
   H = net.clientHeight;
   wires.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  fx.width = innerWidth;
-  fx.height = innerHeight;
-  const count = reduce ? 0 : Math.min(70, Math.floor((innerWidth * innerHeight) / 16000));
-  dots = Array.from({ length: count }, () => ({
-    x: Math.random() * fx.width, y: Math.random() * fx.height,
-    vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
-  }));
-}
-
-// Rede de partículas ao fundo.
-function drawFx() {
-  fctx.clearRect(0, 0, fx.width, fx.height);
-  fctx.fillStyle = "rgba(0,200,255,.55)";
-  for (const d of dots) {
-    d.x += d.vx; d.y += d.vy;
-    if (d.x < 0 || d.x > fx.width) d.vx *= -1;
-    if (d.y < 0 || d.y > fx.height) d.vy *= -1;
-    fctx.fillRect(d.x, d.y, 2, 2);
-  }
-  for (let i = 0; i < dots.length; i++) {
-    for (let j = i + 1; j < dots.length; j++) {
-      const dx = dots[i].x - dots[j].x;
-      const dy = dots[i].y - dots[j].y;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < 12100) {
-        fctx.strokeStyle = `rgba(0,200,255,${(1 - d2 / 12100) * 0.18})`;
-        fctx.beginPath();
-        fctx.moveTo(dots[i].x, dots[i].y);
-        fctx.lineTo(dots[j].x, dots[j].y);
-        fctx.stroke();
-      }
-    }
-  }
+  Bg.resize();
 }
 
 function frame(t) {
@@ -354,7 +398,7 @@ function frame(t) {
     rot += dt * 0.12 * speed;
     px += (tx - px) * 0.06;
     py += (ty - py) * 0.06;
-    drawFx();
+    Bg.draw(t);
   }
   place(t);
   if (!reduce) requestAnimationFrame(frame);

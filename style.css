@@ -121,7 +121,7 @@ dialog input,dialog select{
   border-radius:10px;padding:10px;font:inherit;min-width:0;
 }
 .help{font-size:13px;opacity:.7;margin-bottom:12px}
-.row{display:grid;grid-template-columns:130px 1fr 40px;gap:8px;margin-bottom:8px}
+.row{display:grid;grid-template-columns:130px 1fr 40px 40px;gap:8px;margin-bottom:8px}
 .row .x{border:1px solid rgba(255,255,255,.18);background:#131a28;color:#fff;border-radius:10px;cursor:pointer}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .btn{
@@ -131,4 +131,18 @@ dialog input,dialog select{
 .btn:disabled{opacity:.4;cursor:default}
 .btn.primary{background:#00c8ff;border-color:#00c8ff;color:#04121a;margin-left:auto}
 .msg{margin-top:12px;font-size:13px;word-break:break-all;opacity:.85}
-@media (max-width:520px){.row{grid-template-columns:108px 1fr 36px}}
+@media (max-width:520px){.row{grid-template-columns:100px 1fr 36px 36px}}
+
+/* ===== Fotos enviadas ===== */
+.ph{
+  position:relative;border:1px dashed rgba(255,255,255,.35);border-radius:10px;cursor:pointer;
+  background:#131a28 center/cover no-repeat;color:#fff;font-size:16px;
+}
+.ph.has{border-style:solid}
+.ph:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.ph-del{
+  position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;
+  background:#ff3d9a;color:#fff;font:700 13px/18px system-ui,sans-serif;text-align:center;
+}
+.photo-field{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:10px}
+.photo-field .ph{width:56px;height:56px;border-radius:50%}

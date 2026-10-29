@@ -38,3 +38,9 @@ python -m http.server 8000
 
 ## Publicar
 No repositório: **Settings > Pages > Deploy from a branch > main / root**.
+
+## Fotos enviadas
+Se a foto de uma rede não carrega (o Instagram costuma bloquear), clique no 📷 ao lado do link e envie uma imagem. Ela é reduzida e guardada só no navegador, por isso **não vai no link compartilhado**. Também dá para enviar a sua foto do centro.
+
+## Fundos animados
+No editor, escolha: rede de partículas, chuva digital, estrelas, aurora ou nenhum (o mais leve).

@@ -24,7 +24,12 @@
       <label>Seu nome
         <input id="edName" type="text" maxlength="40" autocomplete="name" placeholder="Como você quer aparecer" />
       </label>
-      <p class="help">Cole o link do perfil, ou escolha a rede e digite o usuário. A foto do centro vem do primeiro link. Tudo é salvo automaticamente.</p>
+      <p class="help">Cole o link do perfil, ou escolha a rede e digite o usuário. A foto do centro vem do primeiro link. Tudo é salvo automaticamente. Fotos enviadas ficam só neste aparelho, e não vão no link compartilhado.</p>
+      <div class="photo-field">
+        <span>Sua foto no centro (opcional)</span>
+        <button type="button" class="ph" id="edCenterPhoto" aria-label="Enviar a sua foto"></button>
+      </div>
+      <label>Fundo animado <select id="edBg"></select></label>
       <div id="edRows"></div>
       <div class="actions">
         <button type="button" class="btn" id="edAdd">Adicionar link</button>
@@ -36,6 +41,7 @@
   </dialog>
 
   <noscript><p class="status">Ative o JavaScript para usar a página.</p></noscript>
+  <script src="bg.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
