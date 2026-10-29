@@ -76,3 +76,27 @@ body{
   .pulse{display:none}
   .node{animation:none}
 }
+
+/* ===== Mais movimento ===== */
+.fx{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.hub::before,.hub::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  border:2px solid #00c8ff;opacity:0;pointer-events:none;
+  animation:ripple 3.6s ease-out infinite;
+}
+.hub::after{animation-delay:1.8s}
+@keyframes ripple{from{scale:1;opacity:.6}to{scale:2.6;opacity:0}}
+.spin{
+  position:absolute;inset:-14px;border-radius:50%;pointer-events:none;
+  border:2px dashed rgba(0,200,255,.55);animation:spin 14s linear infinite;
+}
+@keyframes spin{to{rotate:360deg}}
+.node::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  border:2px solid var(--c);opacity:0;pointer-events:none;
+}
+.node.burst::after{animation:burst .7s ease-out}
+@keyframes burst{from{opacity:.9;scale:1}to{opacity:0;scale:2.2}}
+@media (prefers-reduced-motion:reduce){
+  .hub::before,.hub::after,.spin,.node.burst::after{animation:none;display:none}
+}
