@@ -44,3 +44,8 @@ Se a foto de uma rede não carrega (o Instagram costuma bloquear), clique no �
 
 ## Fundos animados
 No editor, escolha: rede de partículas, chuva digital, estrelas, aurora ou nenhum (o mais leve).
+
+## Quem pode editar
+- O link copiado pelo botão do editor abre em **modo só visualização**: não aparece o botão Editar, e há um atalho "Criar a minha".
+- Quem abre o endereço da página sem nada depois do `#` edita a **própria** página, salva no próprio navegador.
+- Ninguém consegue alterar a página de outra pessoa: os dados ficam no link e no navegador de cada um, não em um servidor. Isso não é uma senha. Editar de qualquer aparelho, com login, exige um servidor.

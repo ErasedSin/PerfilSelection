@@ -16,6 +16,7 @@
     <svg class="wires" id="wires" aria-hidden="true"></svg>
   </main>
   <button class="edit" id="editBtn" type="button">✎ Editar</button>
+  <a class="edit" id="createLink" href="./" hidden>Criar a minha</a>
   <p class="status" id="status" aria-live="polite"></p>
 
   <dialog id="editor" aria-labelledby="edTitle">
@@ -33,7 +34,7 @@
       <div id="edRows"></div>
       <div class="actions">
         <button type="button" class="btn" id="edAdd">Adicionar link</button>
-        <button type="button" class="btn" id="edCopy">Copiar link para compartilhar</button>
+        <button type="button" class="btn" id="edCopy">Copiar link (só visualização)</button>
         <button type="submit" class="btn primary">Pronto</button>
       </div>
       <p class="msg" id="edMsg" aria-live="polite"></p>

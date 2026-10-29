@@ -350,10 +350,10 @@ window.addEventListener("pagehide", () => { if (saveTimer) saveNow(); });
 edCopy.addEventListener("click", async () => {
   const cfg = readForm();
   const hasPhoto = cfg.cp || cfg.links.some((l) => l.p);
-  const link = location.href.split("#")[0] + "#" + encode(cfg);
+  const link = location.href.split("#")[0] + "#v=1&" + encode(cfg);
   try {
     await navigator.clipboard.writeText(link);
-    edMsg.textContent = "Link copiado." + (hasPhoto ? " As fotos enviadas ficam só neste aparelho e não vão no link." : "");
+    edMsg.textContent = "Link copiado (só visualização)." + (hasPhoto ? " As fotos enviadas ficam só neste aparelho e não vão no link." : "");
   } catch {
     edMsg.textContent = link;
   }
@@ -361,6 +361,14 @@ edCopy.addEventListener("click", async () => {
 
 /* ===== Início ===== */
 config = loadConfig();
+
+// Link com v=1 (o que o botão "Copiar" gera) é só para ver: some o Editar e aparece "Criar a minha".
+const viewOnly = config.links.length > 0 && new URLSearchParams(location.hash.slice(1)).get("v") === "1";
+if (viewOnly) {
+  document.getElementById("editBtn").hidden = true;
+  document.getElementById("createLink").hidden = false;
+}
+
 render();
 resize();
 window.addEventListener("resize", resize);
@@ -369,7 +377,7 @@ window.addEventListener("pointermove", (e) => {
   ty = (e.clientY / innerHeight - 0.5) * 28;
 });
 requestAnimationFrame(frame);
-if (!config.links.length) openEditor();
+if (!config.links.length && !viewOnly) openEditor();
 
 function typeName(el, text) {
   if (reduce) { el.textContent = text; return; }
