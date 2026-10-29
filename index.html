@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaio Moreira – Links</title>
-  <meta name="description" content="Rede de links de Gaio Moreira: GitHub, portfólio e redes sociais." />
+  <title>Minha rede de links</title>
+  <meta name="description" content="Monte a sua página de links: cole os perfis e as fotos vêm das redes." />
   <meta name="theme-color" content="#05070b" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌐%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="style.css" />
@@ -12,15 +12,30 @@
 <body>
   <div class="bg"></div>
   <canvas class="fx" id="fx" aria-hidden="true"></canvas>
-  <main class="net" id="net" aria-label="Meus links">
+  <main class="net" id="net" aria-label="Links">
     <svg class="wires" id="wires" aria-hidden="true"></svg>
   </main>
+  <button class="edit" id="editBtn" type="button">✎ Editar</button>
   <p class="status" id="status" aria-live="polite"></p>
-  <noscript>
-    <p class="status">Ative o JavaScript. Links:
-      <a href="https://github.com/ErasedSin">GitHub</a> ·
-      <a href="https://erasedsin.github.io/Profile/">Portfólio</a></p>
-  </noscript>
+
+  <dialog id="editor" aria-labelledby="edTitle">
+    <form method="dialog" id="edForm">
+      <h2 id="edTitle">Monte a sua página</h2>
+      <label>Seu nome
+        <input id="edName" type="text" maxlength="40" autocomplete="name" placeholder="Como você quer aparecer" />
+      </label>
+      <p class="help">Cole o link do perfil, ou escolha a rede e digite o usuário. A foto do centro vem do primeiro link.</p>
+      <div id="edRows"></div>
+      <div class="actions">
+        <button type="button" class="btn" id="edAdd">Adicionar link</button>
+        <button type="button" class="btn" id="edCopy">Copiar link para compartilhar</button>
+        <button type="submit" class="btn primary">Aplicar</button>
+      </div>
+      <p class="msg" id="edMsg" aria-live="polite"></p>
+    </form>
+  </dialog>
+
+  <noscript><p class="status">Ative o JavaScript para usar a página.</p></noscript>
   <script src="script.js"></script>
 </body>
 </html>

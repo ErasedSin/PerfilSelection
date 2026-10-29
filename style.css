@@ -100,3 +100,35 @@ body{
 @media (prefers-reduced-motion:reduce){
   .hub::before,.hub::after,.spin,.node.burst::after{animation:none;display:none}
 }
+
+/* ===== Editor ===== */
+.edit{
+  position:fixed;top:14px;right:14px;z-index:5;padding:9px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);background:rgba(10,12,18,.6);color:#fff;
+  font:600 14px system-ui,sans-serif;cursor:pointer;backdrop-filter:blur(6px);
+}
+.edit:hover{background:rgba(255,255,255,.12)}
+.edit:focus-visible,.btn:focus-visible,dialog input:focus-visible,dialog select:focus-visible{outline:3px solid #fff;outline-offset:2px}
+dialog{
+  margin:auto;width:min(540px,92vw);max-height:90vh;overflow:auto;padding:20px;border-radius:16px;
+  border:1px solid rgba(0,200,255,.35);background:#0b0f18;color:#fff;box-shadow:0 20px 80px rgba(0,0,0,.7);
+}
+dialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(3px)}
+dialog h2{font-size:20px;margin-bottom:14px}
+dialog label{display:grid;gap:6px;font-size:14px;margin-bottom:10px}
+dialog input,dialog select{
+  background:#131a28;color:#fff;border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;padding:10px;font:inherit;min-width:0;
+}
+.help{font-size:13px;opacity:.7;margin-bottom:12px}
+.row{display:grid;grid-template-columns:130px 1fr 40px;gap:8px;margin-bottom:8px}
+.row .x{border:1px solid rgba(255,255,255,.18);background:#131a28;color:#fff;border-radius:10px;cursor:pointer}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{
+  padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+  background:#131a28;color:#fff;font:600 14px system-ui,sans-serif;cursor:pointer;
+}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:#00c8ff;border-color:#00c8ff;color:#04121a;margin-left:auto}
+.msg{margin-top:12px;font-size:13px;word-break:break-all;opacity:.85}
+@media (max-width:520px){.row{grid-template-columns:108px 1fr 36px}}
