@@ -2,8 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PerfilSelection</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gaio Moreira – Links</title>
+  <meta name="description" content="Menu de links de Gaio Moreira: GitHub, LinkedIn e portfólio." />
+  <meta name="theme-color" content="#05070b" />
+  <meta property="og:title" content="Gaio Moreira – Links" />
+  <meta property="og:description" content="GitHub, LinkedIn e portfólio em um menu estilo seleção de jogo." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎮%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,21 +17,29 @@
 
   <main class="wrap">
     <header class="top">
-      <div class="hint" id="hint">Arraste ◀ ▶ ou use as setas</div>
+      <div class="hint" id="hint">Arraste ou use as setas ◀ ▶</div>
     </header>
 
     <section class="stage">
       <button class="nav left" id="btnPrev" aria-label="Anterior">◀</button>
 
-      <div class="wheel-viewport" id="viewport" aria-label="Seleção de perfis">
+      <div class="wheel-viewport" id="viewport" role="region" aria-label="Seleção de links">
         <div class="wheel-track" id="track"></div>
       </div>
 
       <button class="nav right" id="btnNext" aria-label="Próximo">▶</button>
     </section>
 
-    <div class="label" id="label">Carregando...</div>
+    <div class="label" id="label" aria-live="polite">Carregando...</div>
     <div class="sub" id="sub">Clique no círculo central para abrir</div>
+
+    <noscript>
+      <p class="noscript">
+        Ative o JavaScript para ver o menu. Links:
+        <a href="https://github.com/ErasedSin">GitHub</a> ·
+        <a href="https://erasedsin.github.io/Profile/">Portfólio</a>
+      </p>
+    </noscript>
   </main>
 
   <script src="script.js"></script>
