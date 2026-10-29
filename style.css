@@ -13,7 +13,6 @@ body{
     #05070b;
 }
 
-/* ===== Rede ===== */
 .net{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;--s:78px;--hub:124px;--c:#00c8ff}
 .wires{position:absolute;inset:0;width:100%;height:100%}
 
@@ -37,7 +36,6 @@ body{
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes run{from{stroke-dashoffset:100;opacity:1}to{stroke-dashoffset:0;opacity:1}}
 
-/* ===== Nós ===== */
 .node,.hub{position:absolute;display:block;text-decoration:none;color:inherit}
 .hub{left:50%;top:50%;translate:-50% -50%;width:var(--hub);height:var(--hub)}
 .node{width:var(--s);height:var(--s);translate:-50% -50%;
@@ -77,7 +75,6 @@ body{
   .node{animation:none}
 }
 
-/* ===== Mais movimento ===== */
 .fx{position:fixed;inset:0;z-index:-1;pointer-events:none}
 .hub::before,.hub::after{
   content:"";position:absolute;inset:0;border-radius:50%;
@@ -101,7 +98,6 @@ body{
   .hub::before,.hub::after,.spin,.node.burst::after{animation:none;display:none}
 }
 
-/* ===== Editor ===== */
 .edit{
   position:fixed;top:14px;right:14px;z-index:5;padding:9px 14px;border-radius:999px;
   border:1px solid rgba(255,255,255,.18);background:rgba(10,12,18,.6);color:#fff;
@@ -133,7 +129,6 @@ dialog input,dialog select{
 .msg{margin-top:12px;font-size:13px;word-break:break-all;opacity:.85}
 @media (max-width:520px){.row{grid-template-columns:100px 1fr 36px 36px}}
 
-/* ===== Fotos enviadas ===== */
 .ph{
   position:relative;border:1px dashed rgba(255,255,255,.35);border-radius:10px;cursor:pointer;
   background:#131a28 center/cover no-repeat;color:#fff;font-size:16px;
@@ -148,3 +143,11 @@ dialog input,dialog select{
 .photo-field .ph{width:56px;height:56px;border-radius:50%}
 
 .edit{text-decoration:none;display:inline-block}
+
+.wires{transition:opacity .25s ease}
+.net.morph .wires{opacity:0}
+.net.morph .node,.net.morph .hub{transition:left .7s ease,top .7s ease}
+.net[data-layout="solar"] .line{stroke-opacity:.16}
+.net[data-layout="solar"] .wire.on .line{stroke-opacity:1}
+.net[data-layout="solar"] .ring{stroke:rgba(255,255,255,.22);stroke-dasharray:none}
+.net[data-layout="constelacao"] .line{stroke-width:1.2}

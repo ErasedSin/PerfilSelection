@@ -1,4 +1,3 @@
-// Fundos animados desenhados no <canvas id="fx">.
 const Bg = (() => {
   const cv = document.getElementById("fx");
   const ctx = cv.getContext("2d");

@@ -1,19 +1,17 @@
 const net = document.getElementById("net");
 const wires = document.getElementById("wires");
 const status = document.getElementById("status");
-// Se o bg.js não carregar, a página continua funcionando, só sem o fundo animado.
 const bg = typeof Bg !== "undefined" ? Bg : { set() {}, resize() {}, draw() {} };
 const NS = "http://www.w3.org/2000/svg";
 const MAX_LINKS = 8;
 const STORE = "perfilselection:v2";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-let items = [], config = { name: "", cp: "", bg: "rede", links: [] };
+let items = [], config = { name: "", cp: "", bg: "rede", layout: "orbita", links: [] };
 const nodes = [], wireEls = [], paths = [];
 let ring, hub;
 let W = 0, H = 0, rot = 0, speed = 1, px = 0, py = 0, tx = 0, ty = 0, last = 0;
 
-/* ===== Redes: como montar o link e de onde vem a foto ===== */
 const unav = (p) => (v) => `https://unavatar.io/${p}/${encodeURIComponent(v)}?fallback=false`;
 const PLATFORMS = {
   gh: { label: "GitHub", host: ["github.com"], url: (v) => `https://github.com/${v}`, avatar: (v) => `https://github.com/${v}.png?size=256` },
@@ -27,7 +25,6 @@ const PLATFORMS = {
   site: { label: "Site", site: true },
 };
 
-// Valida a entrada (também a que vem da URL, que é não confiável): só http(s) e usuários simples.
 function normalize(k, raw) {
   const P = PLATFORMS[k];
   if (!P) return null;
@@ -43,7 +40,6 @@ function normalize(k, raw) {
   return /^[\w.-]{1,50}$/.test(v) ? { k, v } : null;
 }
 
-// Reconhece a rede e o usuário a partir de um link colado.
 function detect(text) {
   text = String(text).trim();
   if (!/^(https?:\/\/|www\.)/i.test(text)) return null;
@@ -74,7 +70,7 @@ function toItem({ k, v, p }) {
   return { name: k === "site" ? host : P.label, url, group: P.group, images };
 }
 
-/* ===== Dados: salvos no navegador (localStorage) e, sem fotos, no #hash do link ===== */
+const LAYOUT_LABELS = { orbita: "Órbita", arvore: "Árvore", solar: "Sistema solar", constelacao: "Constelação", espiral: "Espiral" };
 const BGS = { rede: "Rede de partículas", chuva: "Chuva digital", estrelas: "Estrelas", aurora: "Aurora", nenhum: "Nenhum (mais leve)" };
 const isPhoto = (p) => typeof p === "string" && p.length < 200000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p);
 
@@ -82,6 +78,7 @@ function encode(cfg) {
   const p = new URLSearchParams();
   if (cfg.name) p.set("n", cfg.name);
   if (cfg.bg && cfg.bg !== "rede") p.set("b", cfg.bg);
+  if (cfg.layout && cfg.layout !== "orbita") p.set("f", cfg.layout);
   cfg.links.forEach((l) => p.append("l", `${l.k}:${l.v}`));
   return p.toString();
 }
@@ -92,7 +89,7 @@ function decode(str) {
     const i = s.indexOf(":");
     return i > 0 ? normalize(s.slice(0, i), s.slice(i + 1)) : null;
   }).filter(Boolean);
-  return { name: (p.get("n") || "").slice(0, 40), cp: "", bg: BGS[p.get("b")] ? p.get("b") : "rede", links };
+  return { name: (p.get("n") || "").slice(0, 40), cp: "", bg: BGS[p.get("b")] ? p.get("b") : "rede", layout: LAYOUT_LABELS[p.get("f")] ? p.get("f") : "orbita", links };
 }
 
 function fromStored(o) {
@@ -102,7 +99,7 @@ function fromStored(o) {
     if (n && isPhoto(l.p)) n.p = l.p;
     return n;
   }).filter(Boolean);
-  return { name: String(o.name || "").slice(0, 40), cp: isPhoto(o.cp) ? o.cp : "", bg: BGS[o.bg] ? o.bg : "rede", links };
+  return { name: String(o.name || "").slice(0, 40), cp: isPhoto(o.cp) ? o.cp : "", bg: BGS[o.bg] ? o.bg : "rede", layout: LAYOUT_LABELS[o.layout] ? o.layout : "orbita", links };
 }
 
 function readLocal() {
@@ -114,13 +111,12 @@ function loadConfig() {
   if (location.hash.length > 1) {
     const c = decode(location.hash.slice(1));
     if (c.links.length) {
-      // Fotos enviadas ficam só neste aparelho: reaproveita as que combinam com o mesmo link.
       c.links.forEach((l) => { const m = local?.links.find((x) => x.k === l.k && x.v === l.v); if (m?.p) l.p = m.p; });
       c.cp = local?.cp || "";
       return c;
     }
   }
-  return local && local.links.length ? local : { name: "", cp: "", bg: "rede", links: [] };
+  return local && local.links.length ? local : { name: "", cp: "", bg: "rede", layout: "orbita", links: [] };
 }
 
 function saveConfig(cfg) {
@@ -130,7 +126,6 @@ function saveConfig(cfg) {
   return ok;
 }
 
-/* ===== Montagem da rede ===== */
 function svg(tag, attrs) {
   const el = document.createElementNS(NS, tag);
   for (const k in attrs) el.setAttribute(k, attrs[k]);
@@ -169,6 +164,7 @@ function clearNet() {
 function render() {
   clearNet();
   bg.set(config.bg);
+  net.dataset.layout = config.layout;
   items = config.links.map(toItem);
   const name = config.name || "Seu nome";
 
@@ -224,20 +220,20 @@ function render() {
   status.textContent = items.length ? "" : "Toque em Editar e adicione os seus links.";
 }
 
-/* ===== Editor ===== */
 const dlg = document.getElementById("editor");
 const edForm = document.getElementById("edForm");
 const edName = document.getElementById("edName");
 const edBg = document.getElementById("edBg");
+const edLayout = document.getElementById("edLayout");
 const edCenterPhoto = document.getElementById("edCenterPhoto");
 const edRows = document.getElementById("edRows");
 const edAdd = document.getElementById("edAdd");
 const edCopy = document.getElementById("edCopy");
 const edMsg = document.getElementById("edMsg");
 const selectHTML = Object.entries(PLATFORMS).map(([k, p]) => `<option value="${k}">${p.label}</option>`).join("");
+edLayout.innerHTML = Object.entries(LAYOUT_LABELS).map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
 edBg.innerHTML = Object.entries(BGS).map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
 
-// Foto enviada: recorta o centro em quadrado, reduz para 192 px e guarda como JPEG pequeno.
 async function resizeToJpeg(file, size = 192) {
   const bmp = await createImageBitmap(file);
   const c = document.createElement("canvas");
@@ -304,12 +300,13 @@ function readForm() {
     if (l && p) l.p = p;
     return l;
   }).filter(Boolean);
-  return { name: edName.value.trim().slice(0, 40), cp: edCenterPhoto.dataset.p || "", bg: edBg.value, links };
+  return { name: edName.value.trim().slice(0, 40), cp: edCenterPhoto.dataset.p || "", bg: edBg.value, layout: edLayout.value, links };
 }
 
 function openEditor() {
   edName.value = config.name;
   edBg.value = config.bg;
+  edLayout.value = config.layout;
   setPhotoBtn(edCenterPhoto, config.cp);
   edRows.innerHTML = "";
   edMsg.textContent = "";
@@ -319,10 +316,15 @@ function openEditor() {
 
 wirePhoto(edCenterPhoto);
 edBg.addEventListener("change", () => bg.set(edBg.value));
+edLayout.addEventListener("change", () => {
+  config.layout = edLayout.value;
+  net.dataset.layout = config.layout;
+  net.classList.add("morph");
+  setTimeout(() => net.classList.remove("morph"), 750);
+});
 document.getElementById("editBtn").addEventListener("click", openEditor);
 edAdd.addEventListener("click", () => { addRow("ig"); autosave(); });
 
-// Salva sozinho enquanto a pessoa mexe; a rede só é redesenhada ao fechar o painel.
 let saveTimer = 0;
 let dirty = false;
 
@@ -359,10 +361,8 @@ edCopy.addEventListener("click", async () => {
   }
 });
 
-/* ===== Início ===== */
 config = loadConfig();
 
-// Link com v=1 (o que o botão "Copiar" gera) é só para ver: some o Editar e aparece "Criar a minha".
 const viewOnly = config.links.length > 0 && new URLSearchParams(location.hash.slice(1)).get("v") === "1";
 if (viewOnly) {
   document.getElementById("editBtn").hidden = true;
@@ -402,7 +402,6 @@ function frame(t) {
   const dt = Math.min(50, t - last) / 1000;
   last = t;
   if (!reduce) {
-    // Passar o mouse num link pausa a órbita aos poucos, para facilitar o clique.
     const target = net.classList.contains("has-active") ? 0 : 1;
     speed += (target - speed) * 0.08;
     rot += dt * 0.12 * speed;
@@ -414,31 +413,116 @@ function frame(t) {
   if (!reduce) requestAnimationFrame(frame);
 }
 
-// Posiciona nós e linhas: órbita lenta, respiração do raio e parallax com o mouse.
+const LAYOUTS = { orbita: layoutOrbit, arvore: layoutTree, solar: layoutSolar, constelacao: layoutConstellation, espiral: layoutSpiral };
+
 function place(t) {
   if (!hub) return;
-  const n = items.length;
-  const R = Math.min(W, H) * 0.36;
-  const cx = W / 2 - px * 0.5;
-  const cy = H / 2 - py * 0.5;
-  hub.style.transform = `translate(${-px * 0.5}px,${-py * 0.5}px)`;
+  const hubAt = (x, y) => ({ x: x - px * 0.5, y: y - py * 0.5 });
+  const nodeAt = (x, y) => ({ x: x + px, y: y + py });
+  const g = (LAYOUTS[config.layout] || layoutOrbit)(items.length, t, hubAt, nodeAt);
 
-  const pts = items.map((_, i) => {
-    const a = -Math.PI / 2 + rot + (i * 2 * Math.PI) / n;
-    const r = R * (1 + 0.05 * Math.sin(t * 0.0013 + i * 1.7));
-    return { a, r, x: W / 2 + px + r * Math.cos(a), y: H / 2 + py + r * Math.sin(a) };
-  });
-
-  pts.forEach((p, i) => {
+  hub.style.left = `${g.hub.x}px`;
+  hub.style.top = `${g.hub.y}px`;
+  g.pts.forEach((p, i) => {
     nodes[i].style.left = `${p.x}px`;
     nodes[i].style.top = `${p.y}px`;
-
-    const side = i % 2 ? 1 : -1;
-    const mx = cx + (p.x - cx) * 0.45 - Math.sin(p.a) * p.r * 0.12 * side;
-    const my = cy + (p.y - cy) * 0.45 + Math.cos(p.a) * p.r * 0.12 * side;
-    const d = `M${cx} ${cy} L${mx} ${my} L${p.x} ${p.y}`;
-    paths[i].forEach((path) => path.setAttribute("d", d));
+    paths[i].forEach((path) => path.setAttribute("d", g.paths[i]));
   });
+  ring.setAttribute("d", g.ring);
+}
 
-  ring.setAttribute("d", n > 2 ? "M" + pts.map((p) => `${p.x} ${p.y}`).join(" L") + " Z" : "");
+function layoutOrbit(n, t, hubAt, nodeAt) {
+  const R = Math.min(W, H) * 0.36;
+  const h = hubAt(W / 2, H / 2);
+  const pts = [];
+  const paths = [];
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + rot + (i * 2 * Math.PI) / n;
+    const r = R * (1 + 0.05 * Math.sin(t * 0.0013 + i * 1.7));
+    const p = nodeAt(W / 2 + r * Math.cos(a), H / 2 + r * Math.sin(a));
+    const side = i % 2 ? 1 : -1;
+    const mx = h.x + (p.x - h.x) * 0.45 - Math.sin(a) * r * 0.12 * side;
+    const my = h.y + (p.y - h.y) * 0.45 + Math.cos(a) * r * 0.12 * side;
+    pts.push(p);
+    paths.push(`M${h.x} ${h.y} L${mx} ${my} L${p.x} ${p.y}`);
+  }
+  return { hub: h, pts, paths, ring: n > 2 ? "M" + pts.map((p) => `${p.x} ${p.y}`).join(" L") + " Z" : "" };
+}
+
+function layoutTree(n, t, hubAt, nodeAt) {
+  const perRow = W >= 900 ? 8 : 4;
+  const rows = Math.max(1, Math.ceil(n / perRow));
+  const h = hubAt(W / 2, H * 0.2);
+  const pts = [];
+  const paths = [];
+  for (let i = 0; i < n; i++) {
+    const row = i % rows;
+    const inRow = Math.ceil((n - row) / rows);
+    const j = Math.floor(i / rows);
+    const step = Math.min(190, (W - 80) / (inRow + 0.5));
+    const x = W / 2 + (j - (inRow - 1) / 2) * step + (row % 2 ? step / 2 : 0) - (rows > 1 && row % 2 ? step / 4 : 0);
+    const y = H * (0.55 + 0.23 * row) + Math.sin(t * 0.0012 + i * 1.3) * 5;
+    const p = nodeAt(x, y);
+    const bus = h.y + (H * 0.55 - h.y) * 0.5 + row * 16;
+    pts.push(p);
+    paths.push(`M${h.x} ${h.y} L${h.x} ${bus} L${p.x} ${bus} L${p.x} ${p.y}`);
+  }
+  return { hub: h, pts, paths, ring: "" };
+}
+
+function layoutSolar(n, t, hubAt) {
+  const R = Math.min(W, H) * 0.4;
+  const h = hubAt(W / 2, H / 2);
+  const pts = [];
+  const paths = [];
+  let ring = "";
+  for (let i = 0; i < n; i++) {
+    const k = 0.4 + (0.6 * (i + 1)) / n;
+    const rx = R * k;
+    const ry = rx * 0.78;
+    const a = i * 2.4 + rot * Math.pow(1 / k, 1.5);
+    const p = { x: h.x + rx * Math.cos(a), y: h.y + ry * Math.sin(a) };
+    pts.push(p);
+    paths.push(`M${h.x} ${h.y} L${p.x} ${p.y}`);
+    ring += `M${h.x - rx} ${h.y} A${rx} ${ry} 0 1 0 ${h.x + rx} ${h.y} A${rx} ${ry} 0 1 0 ${h.x - rx} ${h.y} `;
+  }
+  return { hub: h, pts, paths, ring };
+}
+
+function layoutConstellation(n, t, hubAt, nodeAt) {
+  const R = Math.min(W, H) * 0.36;
+  const h = hubAt(W / 2, H / 2);
+  const pts = [];
+  const paths = [];
+  let prev = h;
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / n + Math.sin(i * 12.9898) * 0.5;
+    const r = R * (0.6 + 0.4 * Math.abs(Math.sin(i * 78.233)));
+    const p = nodeAt(
+      W / 2 + r * Math.cos(a) + Math.sin(t * 0.0009 + i * 2.1) * 8,
+      H / 2 + r * Math.sin(a) * 0.9 + Math.cos(t * 0.0011 + i * 1.7) * 8
+    );
+    pts.push(p);
+    paths.push(`M${prev.x} ${prev.y} L${p.x} ${p.y}`);
+    prev = p;
+  }
+  return { hub: h, pts, paths, ring: "" };
+}
+
+function layoutSpiral(n, t, hubAt, nodeAt) {
+  const R = Math.min(W, H) * 0.4;
+  const h = hubAt(W / 2, H / 2);
+  const pts = [];
+  const paths = [];
+  for (let i = 0; i < n; i++) {
+    const f = n > 1 ? i / (n - 1) : 1;
+    const r = R * (0.45 + 0.55 * f);
+    const a = -Math.PI / 2 + rot + i * 0.95;
+    const p = nodeAt(W / 2 + r * Math.cos(a), H / 2 + r * Math.sin(a));
+    const cx = (h.x + p.x) / 2 - (p.y - h.y) * 0.25;
+    const cy = (h.y + p.y) / 2 + (p.x - h.x) * 0.25;
+    pts.push(p);
+    paths.push(`M${h.x} ${h.y} Q${cx} ${cy} ${p.x} ${p.y}`);
+  }
+  return { hub: h, pts, paths, ring: "" };
 }
